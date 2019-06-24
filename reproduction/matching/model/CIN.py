@@ -229,7 +229,7 @@ class InterativeConv(nn.Module):
 
         kernel = self.filterGen(filter_rep=filter_rep)  # shape(b_sz, k*h_sz, h_sz)
         fan_in, fan_out = self.k_sz*self.h_sz, self.h_sz
-        kernel = nn.LayerNorm([self.h_sz, self.k_sz*self.h_sz])(kernel)
+        kernel = nn.LayerNorm([self.k_sz*self.h_sz, self.h_sz])(kernel)
         kernel = kernel/math.sqrt(fan_in)
 
         out = self.hyperConv(inputs, kernel, k_sz=self.k_sz)
