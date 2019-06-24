@@ -297,5 +297,5 @@ class InterativeConv(nn.Module):
                 pdNum = int(np.abs(i))
                 o = torch.cat([inputs] + [pad] * pdNum, dim=1)
                 collect.append(o[:, -tstp:, :])
-        out = torch.cat(collect, dim=1)
+        out = torch.cat(collect, dim=-1)
         return out
