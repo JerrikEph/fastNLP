@@ -32,9 +32,11 @@ model = CINModel(embedding)
 
 trainer = Trainer(train_data=data_info.datasets['train'], model=model,
                   optimizer=Adam(lr=1e-4, model_params=model.parameters()),
-                  batch_size=torch.cuda.device_count() * 24, n_epochs=20, print_every=-1,
+                  batch_size=torch.cuda.device_count() * 32,
+                  n_epochs=20, print_every=50,
                   dev_data=data_info.datasets['dev'],
-                  metrics=AccuracyMetric(), metric_key='acc', device=[i for i in range(torch.cuda.device_count())],
+                  metrics=AccuracyMetric(), metric_key='acc',
+                  device=[i for i in range(torch.cuda.device_count())],
                   check_code_level=-1)
 trainer.train(load_best_model=True)
 
