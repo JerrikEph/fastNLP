@@ -188,8 +188,8 @@ class CINConv(nn.Module):
         return torch.max(input + masks.le(0.5).float() * -my_inf, dim=dim)
 
     def forward(self, premise_batch, premise_mask, hypothesis_batch, hypothesis_mask):
-        p_rep = self.max_pooling(premise_batch, mask=premise_mask)
-        h_rep = self.max_pooling(hypothesis_batch, mask=hypothesis_mask)
+        p_rep, _ = self.max_pooling(premise_batch, mask=premise_mask)
+        h_rep, _ = self.max_pooling(hypothesis_batch, mask=hypothesis_mask)
 
         p_out = self.pConv(premise_batch, filter_rep=h_rep)
         h_out = self.hConv(hypothesis_batch, filter_rep=p_rep)
