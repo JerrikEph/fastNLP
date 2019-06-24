@@ -12,6 +12,8 @@ from reproduction.matching.model.bert import BertForNLI
 from reproduction.matching.model.CIN import CINModel
 import argparse
 
+os.environ['FASTNLP_BASE_URL'] = 'http://10.141.222.118:8888/file/download/'
+os.environ['FASTNLP_CACHE_DIR'] = '/remote-home/hyan01/fastnlp_caches'
 
 argument = argparse.ArgumentParser()
 argument.add_argument('--data-path', type=str, default='./data/snli')
