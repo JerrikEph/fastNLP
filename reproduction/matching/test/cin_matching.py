@@ -1,4 +1,5 @@
-import os
+import os,sys
+sys.path.append('../..')
 
 import torch
 
@@ -10,6 +11,7 @@ from fastNLP.modules.encoder.embedding import ElmoEmbedding, StaticEmbedding
 from reproduction.matching.model.bert import BertForNLI
 from reproduction.matching.model.CIN import CINModel
 import argparse
+
 
 argument = argparse.ArgumentParser()
 argument.add_argument('--data-path', type=str, default='./data/snli')
