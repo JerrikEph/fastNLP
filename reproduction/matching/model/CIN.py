@@ -33,7 +33,7 @@ class CINModel(BaseModel):
                                        nn.ReLU())
         nn.init.xavier_uniform_(self.interfere[1].weight.data)
 
-        self.cin_conv = CINConv()
+        self.cin_conv = CINConv(hidden_size=600, k_size=3)
 
         self.rnn_high = BiRNN(self.embedding.embed_size, hidden_size, dropout_rate=dropout_rate)
         # self.rnn_high = LSTM(hidden_size, hidden_size, dropout=dropout_rate, bidirectional=True)
