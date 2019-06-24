@@ -205,6 +205,9 @@ class InterativeConv(nn.Module):
         self.k_sz = k_sz
         in_features = hidden_size
         out_features = hidden_size*k_sz
+
+        self.layer_norm=nn.LayerNorm([self.k_sz*self.h_sz, self.h_sz])
+
         self.P = Parameter(torch.Tensor(out_features, in_features))   # shape(h_sz*k, h_sz) -> (b_sz, k*h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
 
         self.Q = Parameter(torch.Tensor(out_features, in_features))   # shape(k*h_sz, h_sz) -> (1, k, h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
@@ -229,8 +232,7 @@ class InterativeConv(nn.Module):
 
         kernel = self.filterGen(filter_rep=filter_rep)  # shape(b_sz, k*h_sz, h_sz)
         fan_in, fan_out = self.k_sz*self.h_sz, self.h_sz
-        print(kernel.device, '---'*20)
-        kernel = nn.LayerNorm([self.k_sz*self.h_sz, self.h_sz])(kernel)
+        kernel = self.layer_norm(kernel)
         kernel = kernel/math.sqrt(fan_in)
 
         out = self.hyperConv(inputs, kernel, k_sz=self.k_sz)
