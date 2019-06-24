@@ -9,12 +9,14 @@ from fastNLP.modules.encoder.embedding import ElmoEmbedding, StaticEmbedding
 
 from reproduction.matching.model.bert import BertForNLI
 from reproduction.matching.model.CIN import CINModel
+import argparse
 
-
-bert_dirs = 'path/to/bert/dir'
+argument = argparse.ArgumentParser()
+argument.add_argument('--data-path', type=str, default='./data/snli')
+arg = argument.parse_args()
 
 data_info = SNLILoader().process(
-    paths='./data/snli', to_lower=True, seq_len_type='seq_len', bert_tokenizer=None,
+    paths=arg.data_path, to_lower=True, seq_len_type='seq_len', bert_tokenizer=None,
     get_index=True, concat=False,
 )
 
