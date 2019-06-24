@@ -282,7 +282,7 @@ class InterativeConv(nn.Module):
             ret: shape(b_sz, _tstp, k_sz*h_sz)
         '''
         b_sz, tstp, emb_sz = list(inputs.size())
-        pad = torch.zeros(b_sz, 1, emb_sz)
+        pad = torch.zeros(b_sz, 1, emb_sz).cuda()
         padidx = [i-(k_size-1)/2 for i in range(k_size)]
 
         collect = []
