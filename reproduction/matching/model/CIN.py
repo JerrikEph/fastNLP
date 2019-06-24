@@ -171,6 +171,7 @@ def weighted_sum(tensor, weights, mask):
 class CINConv(nn.Module):
 
     def __init__(self, hidden_size, k_size):
+        super(CINConv, self).__init__()
         self.pConv = InterativeConv(hidden_size, k_size)
         self.hConv = InterativeConv(hidden_size, k_size)
 
