@@ -197,7 +197,8 @@ class CINConv(nn.Module):
 
 
 class InterativeConv(nn.Module):
-    def __init(self, hidden_size, k_sz):
+
+    def __init__(self, hidden_size, k_sz):
         super(InterativeConv, self).__init__()
         self.h_sz = hidden_size
         self.k_sz = k_sz
