@@ -61,7 +61,7 @@ callbacks = [
 
 trainer = Trainer(train_data=data_info.datasets['train'], model=model,
                   optimizer=optimizer,
-                  batch_size=torch.cuda.device_count() * 168,
+                  batch_size=torch.cuda.device_count() * arg.batch_size_per_gpu,
                   n_epochs=arg.n_epochs, print_every=50,
                   dev_data=data_info.datasets['dev'],
                   metrics=AccuracyMetric(), metric_key='acc',
