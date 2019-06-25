@@ -2,8 +2,8 @@ import os,sys
 sys.path.append('../..')
 
 import torch
-
-from fastNLP.core import Trainer, Tester, Adam, AccuracyMetric, Const
+from torch.optim import Adam
+from fastNLP.core import Trainer, Tester, AccuracyMetric, Const
 from fastNLP.core.callback import GradientClipCallback, LRScheduler
 from reproduction.matching.data.MatchingDataLoader import SNLILoader
 from fastNLP.modules.encoder.embedding import ElmoEmbedding, StaticEmbedding
@@ -31,7 +31,7 @@ embedding = StaticEmbedding(data_info.vocabs[Const.INPUT], model_dir_or_name='en
 # model = BertForNLI(bert_dir=bert_dirs)
 model = CINModel(embedding)
 
-optimizer = Adam(lr=2e-3, model_params=model.parameters())
+optimizer = Adam(lr=2e-3, params=model.parameters())
 scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
 
 callbacks = [
