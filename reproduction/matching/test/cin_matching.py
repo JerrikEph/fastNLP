@@ -31,7 +31,7 @@ embedding = StaticEmbedding(data_info.vocabs[Const.INPUT], model_dir_or_name='en
 # model = BertForNLI(bert_dir=bert_dirs)
 model = CINModel(embedding)
 
-optimizer = Adam(lr=2e-3, params=model.parameters())
+optimizer = Adam(lr=2e-3, model_params=model.parameters())
 scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
 
 callbacks = [
