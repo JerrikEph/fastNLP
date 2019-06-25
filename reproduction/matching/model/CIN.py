@@ -31,7 +31,7 @@ class CINModel(BaseModel):
         # self.interfere = nn.Sequential(nn.Dropout(p=dropout_rate),
         #                                nn.Linear(8 * hidden_size, hidden_size),
         #                                nn.ReLU())
-        nn.init.xavier_uniform_(self.interfere[1].weight.data)
+        # nn.init.xavier_uniform_(self.interfere[1].weight.data)
 
         self.cin_conv = CINConv(hidden_size=600, k_size=3)
 
