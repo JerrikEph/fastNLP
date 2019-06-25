@@ -172,16 +172,23 @@ def weighted_sum(tensor, weights, mask):
 
 class CINConv(nn.Module):
 
-    def __init__(self, hidden_size, k_size):
+    def __init__(self, hidden_size, k_size, dropout):
         super(CINConv, self).__init__()
-        self.linear_p = nn.Linear(hidden_size*6, hidden_size)
-        self.linear_h = nn.Linear(hidden_size*6, hidden_size)
+        self.dropout = dropout
+
+        self.p_map = nn.Sequential(nn.Dropout(p=self.dropout),
+                                       nn.Linear(6 * hidden_size, hidden_size),
+                                       nn.ReLU())
+        self.h_map = nn.Sequential(nn.Dropout(p=self.dropout),
+                                   nn.Linear(6 * hidden_size, hidden_size),
+                                   nn.ReLU())
 
         self.pConv = InterativeConv(hidden_size, k_size)
         self.hConv = InterativeConv(hidden_size, k_size)
 
-        nn.init.xavier_uniform_(self.linear_p.weight)
-        nn.init.xavier_uniform_(self.linear_h.weight)
+        nn.init.xavier_uniform_(self.p_map[1].weight.data)
+        nn.init.xavier_uniform_(self.h_map[1].weight.data)
+
 
     @staticmethod
     def mean_pooling(input, mask, dim=1):
@@ -213,7 +220,7 @@ class CINConv(nn.Module):
                            torch.abs(h_out_intra - h_out_inter),
                            h_out_intra * h_out_inter), dim=2)  # ma: [B, PL, 8 * H]
 
-        p_out, h_out = self.linear_p(p_out), self.linear_h(h_out)
+        p_out, h_out = self.p_map(p_out), self.h_map(h_out)
 
 
         return p_out, h_out
