@@ -28,9 +28,9 @@ class CINModel(BaseModel):
         self.rnn = BiRNN(self.embedding.embed_size, hidden_size, dropout_rate=dropout_rate)
         # self.rnn = LSTM(self.embedding.embed_size, hidden_size, dropout=dropout_rate, bidirectional=True)
 
-        self.interfere = nn.Sequential(nn.Dropout(p=dropout_rate),
-                                       nn.Linear(8 * hidden_size, hidden_size),
-                                       nn.ReLU())
+        # self.interfere = nn.Sequential(nn.Dropout(p=dropout_rate),
+        #                                nn.Linear(8 * hidden_size, hidden_size),
+        #                                nn.ReLU())
         nn.init.xavier_uniform_(self.interfere[1].weight.data)
 
         self.cin_conv = CINConv(hidden_size=600, k_size=3)
@@ -57,13 +57,15 @@ class CINModel(BaseModel):
 
         ai, bi = self.cin_conv(a, mask1, b, mask2)
 
-        a_ = torch.cat((a, ai, a - ai, a * ai), dim=2)  # ma: [B, PL, 8 * H]
-        b_ = torch.cat((b, bi, b - bi, b * bi), dim=2)
-        a_f = self.interfere(a_)
-        b_f = self.interfere(b_)
+        # a_ = torch.cat((a, ai, a - ai, a * ai), dim=2)  # ma: [B, PL, 8 * H]
+        # b_ = torch.cat((b, bi, b - bi, b * bi), dim=2)
+        # a_f = self.interfere(a_)
+        # b_f = self.interfere(b_)
 
-        a_h = self.rnn_high(a_f, mask1.byte())  # ma: [B, PL, 2 * H]
-        b_h = self.rnn_high(b_f, mask2.byte())
+        # a_h = self.rnn_high(a_f, mask1.byte())  # ma: [B, PL, 2 * H]
+        # b_h = self.rnn_high(b_f, mask2.byte())
+        a_h = self.rnn_high(ai, mask1.byte())  # ma: [B, PL, 2 * H]
+        b_h = self.rnn_high(bi, mask2.byte())
 
         a_avg = self.mean_pooling(a_h, mask1, dim=1)
         a_max, _ = self.max_pooling(a_h, mask1, dim=1)
@@ -172,8 +174,14 @@ class CINConv(nn.Module):
 
     def __init__(self, hidden_size, k_size):
         super(CINConv, self).__init__()
+        self.linear_p = nn.Linear(hidden_size*6, hidden_size)
+        self.linear_h = nn.Linear(hidden_size*6, hidden_size)
+
         self.pConv = InterativeConv(hidden_size, k_size)
         self.hConv = InterativeConv(hidden_size, k_size)
+
+        nn.init.xavier_uniform_(self.linear_p.weight)
+        nn.init.xavier_uniform_(self.linear_h.weight)
 
     @staticmethod
     def mean_pooling(input, mask, dim=1):
@@ -191,8 +199,22 @@ class CINConv(nn.Module):
         p_rep, _ = self.max_pooling(premise_batch, mask=premise_mask)
         h_rep, _ = self.max_pooling(hypothesis_batch, mask=hypothesis_mask)
 
-        p_out = self.pConv(premise_batch, filter_rep=h_rep)
-        h_out = self.hConv(hypothesis_batch, filter_rep=p_rep)
+        p_out_inter = self.pConv(premise_batch, filter_rep=h_rep)
+        h_out_inter = self.hConv(hypothesis_batch, filter_rep=p_rep)
+
+        p_out_intra = self.pConv(premise_batch, filter_rep=p_rep)
+        h_out_intra = self.hConv(hypothesis_batch, filter_rep=h_rep)
+
+        p_out = torch.cat((premise_batch, p_out_inter, p_out_intra, p_out_intra - p_out_inter,
+                           torch.abs(p_out_intra - p_out_inter),
+                           p_out_intra * p_out_inter), dim=2)  # ma: [B, PL, 8 * H]
+
+        h_out = torch.cat((hypothesis_batch, h_out_inter, h_out_intra, h_out_intra - h_out_inter,
+                           torch.abs(h_out_intra - h_out_inter),
+                           h_out_intra * h_out_inter), dim=2)  # ma: [B, PL, 8 * H]
+
+        p_out, h_out = self.linear_p(p_out), self.linear_h(h_out)
+
 
         return p_out, h_out
 
@@ -217,8 +239,8 @@ class InterativeConv(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        nn.init.kaiming_uniform_(self.P, a=math.sqrt(5), mode='fan_in')
-        nn.init.kaiming_uniform_(self.Q, a=math.sqrt(5), mode='fan_in')
+        nn.init.xavier_uniform_(self.P)
+        nn.init.xavier_uniform_(self.Q)
         nn.init.zeros_(self.B)
 
     def forward(self, inputs, filter_rep):
