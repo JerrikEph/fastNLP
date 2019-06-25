@@ -17,6 +17,7 @@ os.environ['FASTNLP_BASE_URL'] = 'http://10.141.222.118:8888/file/download/'
 os.environ['FASTNLP_CACHE_DIR'] = '/remote-home/hyan01/fastnlp_caches'
 
 argument = argparse.ArgumentParser()
+argument.add_argument('--data-path', type=str, default='./data/snli')
 argument.add_argument('--embedding', choices=['glove', 'elmo', 'none'], default='glove')
 argument.add_argument('--batch-size-per-gpu', type=int, default=168)
 argument.add_argument('--n-epochs', type=int, default=100)
