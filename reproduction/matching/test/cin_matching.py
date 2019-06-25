@@ -3,6 +3,7 @@ sys.path.append('../..')
 
 import torch
 from torch.optim import Adam
+from torch.optim.adamax import Adamax
 from fastNLP.core import Trainer, Tester, AccuracyMetric, Const
 from fastNLP.core.callback import GradientClipCallback, LRScheduler
 from reproduction.matching.data.MatchingDataLoader import SNLILoader, RTELoader, QNLILoader
@@ -53,7 +54,7 @@ embedding = StaticEmbedding(data_info.vocabs[Const.INPUT], model_dir_or_name='en
 # model = BertForNLI(bert_dir=bert_dirs)
 model = CINModel(embedding)
 
-optimizer = Adam(lr=2e-3, params=model.parameters())
+optimizer = Adamax(lr=arg.lr, params=model.parameters())
 scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
 
 callbacks = [
