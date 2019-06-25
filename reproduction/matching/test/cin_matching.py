@@ -19,7 +19,7 @@ os.environ['FASTNLP_CACHE_DIR'] = '/remote-home/hyan01/fastnlp_caches'
 argument = argparse.ArgumentParser()
 argument.add_argument('--data-path', type=str, default='./data/snli')
 argument.add_argument('--embedding', choices=['glove', 'elmo', 'none'], default='glove')
-argument.add_argument('--batch-size-per-gpu', type=int, default=168)
+argument.add_argument('--batch-size-per-gpu', type=int, default=128)
 argument.add_argument('--n-epochs', type=int, default=100)
 argument.add_argument('--lr', type=float, default=2e-3)
 argument.add_argument('--seq-len-type', choices=['bert', 'mask', 'seq_len'], default='seq_len')
@@ -53,7 +53,7 @@ embedding = StaticEmbedding(data_info.vocabs[Const.INPUT], model_dir_or_name='en
 # model = BertForNLI(bert_dir=bert_dirs)
 model = CINModel(embedding)
 
-optimizer = Adam(lr=arg.lr, params=model.parameters())
+optimizer = Adam(lr=2e-3, params=model.parameters())
 scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
 
 callbacks = [
