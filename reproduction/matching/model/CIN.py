@@ -35,7 +35,7 @@ class CINModel(BaseModel):
 
         self.cin_conv = CINConv(hidden_size=600, k_size=3, dropout=dropout_rate)
 
-        self.rnn_high = BiRNN(self.embedding.embed_size, hidden_size, dropout_rate=dropout_rate)
+        self.rnn_high = BiRNN(self.embedding.embed_size*2, hidden_size, dropout_rate=dropout_rate)
         # self.rnn_high = LSTM(hidden_size, hidden_size, dropout=dropout_rate, bidirectional=True)
 
         self.classifier = nn.Sequential(nn.Dropout(p=dropout_rate),
