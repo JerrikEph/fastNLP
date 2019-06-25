@@ -32,7 +32,7 @@ model = CINModel(embedding)
 
 trainer = Trainer(train_data=data_info.datasets['train'], model=model,
                   optimizer=Adam(lr=5e-4, model_params=model.parameters()),
-                  batch_size=torch.cuda.device_count() * 32,
+                  batch_size=torch.cuda.device_count() * 168,
                   n_epochs=100, print_every=50,
                   dev_data=data_info.datasets['dev'],
                   metrics=AccuracyMetric(), metric_key='acc',
