@@ -31,9 +31,9 @@ embedding = StaticEmbedding(data_info.vocabs[Const.INPUT], model_dir_or_name='en
 model = CINModel(embedding)
 
 trainer = Trainer(train_data=data_info.datasets['train'], model=model,
-                  optimizer=Adam(lr=1e-4, model_params=model.parameters()),
+                  optimizer=Adam(lr=5e-4, model_params=model.parameters()),
                   batch_size=torch.cuda.device_count() * 32,
-                  n_epochs=20, print_every=50,
+                  n_epochs=100, print_every=50,
                   dev_data=data_info.datasets['dev'],
                   metrics=AccuracyMetric(), metric_key='acc',
                   device=[i for i in range(torch.cuda.device_count())],
