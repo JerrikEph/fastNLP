@@ -17,12 +17,11 @@ from fastNLP.core.utils import seq_len_to_mask
 
 
 class CINModel(BaseModel):
-    def __init__(self, init_embedding: TokenEmbedding, hidden_size=None, num_labels=3, dropout_rate=0.3,
-                 dropout_embed=0.3):
+    def __init__(self, init_embedding: TokenEmbedding, hidden_size=None, num_labels=3, dropout_rate=0.5):
         super(CINModel, self).__init__()
         self.emb_factor = Parameter(torch.tensor(1.0))
         self.embedding = init_embedding
-        self.dropout_embed = EmbedDropout(p=dropout_embed)
+        # self.dropout_embed = EmbedDropout(p=dropout_embed)
         if hidden_size is None:
             hidden_size = self.embedding.embed_size
         self.rnn = BiRNN(self.embedding.embed_size, hidden_size, dropout_rate=dropout_rate)
@@ -53,7 +52,7 @@ class CINModel(BaseModel):
         b0 = self.embedding(words2)
         a0 = a0*torch.abs(self.emb_factor)
         b0 = b0*torch.abs(self.emb_factor)
-        a0, b0 = self.dropout_embed(a0), self.dropout_embed(b0)
+        # a0, b0 = self.dropout_embed(a0), self.dropout_embed(b0)
         a = self.rnn(a0, mask1.byte())  # a: [B, PL, 2 * H]
         b = self.rnn(b0, mask2.byte())
 
@@ -180,10 +179,10 @@ class CINConv(nn.Module):
 
         self.p_map = nn.Sequential(nn.Dropout(p=self.dropout),
                                        nn.Linear(6 * hidden_size, hidden_size),
-                                       nn.ReLU())
+                                       nn.LeakyReLU())
         self.h_map = nn.Sequential(nn.Dropout(p=self.dropout),
                                    nn.Linear(6 * hidden_size, hidden_size),
-                                   nn.ReLU())
+                                   nn.LeakyReLU())
 
         self.pConv = InterativeConv(hidden_size, k_size)
         self.hConv = InterativeConv(hidden_size, k_size)
