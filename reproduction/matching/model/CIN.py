@@ -236,6 +236,7 @@ class InterativeConv(nn.Module):
         in_features = hidden_size
         out_features = hidden_size*k_sz
         self.activation = nn.LeakyReLU()
+        self.scale_factor = Parameter(torch.tensor(1.0))
 
         self.layer_norm=nn.LayerNorm([self.k_sz*self.h_sz, self.h_sz])
 
@@ -264,7 +265,7 @@ class InterativeConv(nn.Module):
         kernel = self.filterGen(filter_rep=filter_rep)  # shape(b_sz, k*h_sz, h_sz)
         fan_in, fan_out = self.k_sz*self.h_sz, self.h_sz
         kernel = self.layer_norm(kernel)
-        kernel = kernel/math.sqrt(fan_in)
+        kernel = kernel/math.sqrt(fan_in)*self.scale_factor
 
         out = self.hyperConv(inputs, kernel, k_sz=self.k_sz)
         out = self.activation(out)
@@ -287,7 +288,7 @@ class InterativeConv(nn.Module):
         Pz = Pz.view(size=[b_sz, self.k_sz, self.h_sz, self.h_sz])
         PzQ = Pz.matmul(Q) + B
         kernel = PzQ.view(size=[b_sz, self.k_sz*self.h_sz, self.h_sz])   # shape(b_sz, k*h_sz, h_sz)
-        return nn.LeakyReLU()(kernel)
+        return kernel
 
     @staticmethod
     def hyperConv(inputs, kernel, k_sz):
