@@ -50,7 +50,6 @@ else:
 
 
 embedding = StaticEmbedding(data_info.vocabs[Const.INPUT], model_dir_or_name='en-glove-840b-300', requires_grad=True)
-embedding.embedding.weight.data = embedding.embedding.weight.data / embedding.embedding.weight.data.std()
 # model = BertForNLI(bert_dir=bert_dirs)
 model = CINModel(embedding)
 
