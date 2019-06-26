@@ -20,7 +20,7 @@ class CINModel(BaseModel):
     def __init__(self, init_embedding: TokenEmbedding, hidden_size=None, num_labels=3, dropout_rate=0.3,
                  dropout_embed=0.1):
         super(CINModel, self).__init__()
-
+        self.emb_factor = Parameter(torch.tensor(1.0))
         self.embedding = init_embedding
         self.dropout_embed = EmbedDropout(p=dropout_embed)
         if hidden_size is None:
@@ -51,6 +51,8 @@ class CINModel(BaseModel):
         mask2 = seq_len_to_mask(seq_len2)
         a0 = self.embedding(words1)  # B * len * emb_dim
         b0 = self.embedding(words2)
+        a0 = a0*torch.abs(self.emb_factor)
+        b0 = b0*torch.abs(self.emb_factor)
         a0, b0 = self.dropout_embed(a0), self.dropout_embed(b0)
         a = self.rnn(a0, mask1.byte())  # a: [B, PL, 2 * H]
         b = self.rnn(b0, mask2.byte())
