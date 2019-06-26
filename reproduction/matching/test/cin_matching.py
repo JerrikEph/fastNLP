@@ -54,7 +54,7 @@ embedding = StaticEmbedding(data_info.vocabs[Const.INPUT], model_dir_or_name='en
 model = CINModel(embedding)
 
 optimizer = Adamax(lr=arg.lr, params=model.parameters())
-scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
+scheduler = StepLR(optimizer, step_size=5, gamma=0.6)
 
 callbacks = [
     GradientClipCallback(clip_value=10), LRScheduler(scheduler)
