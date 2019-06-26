@@ -235,6 +235,7 @@ class InterativeConv(nn.Module):
         self.k_sz = k_sz
         in_features = hidden_size
         out_features = hidden_size*k_sz
+        self.activation = nn.LeakyReLU()
 
         self.layer_norm=nn.LayerNorm([self.k_sz*self.h_sz, self.h_sz])
 
@@ -266,6 +267,7 @@ class InterativeConv(nn.Module):
         kernel = kernel/math.sqrt(fan_in)
 
         out = self.hyperConv(inputs, kernel, k_sz=self.k_sz)
+        out = self.activation(out)
         return out
 
     def filterGen(self, filter_rep):
