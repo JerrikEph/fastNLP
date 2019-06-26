@@ -18,7 +18,7 @@ from fastNLP.core.utils import seq_len_to_mask
 
 class CINModel(BaseModel):
     def __init__(self, init_embedding: TokenEmbedding, hidden_size=None, num_labels=3, dropout_rate=0.3,
-                 dropout_embed=0.1):
+                 dropout_embed=0.3):
         super(CINModel, self).__init__()
         self.emb_factor = Parameter(torch.tensor(1.0))
         self.embedding = init_embedding
