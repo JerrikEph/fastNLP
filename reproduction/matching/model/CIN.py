@@ -179,10 +179,10 @@ class CINConv(nn.Module):
         self.dropout = dropout
 
         self.p_map = nn.Sequential(nn.Dropout(p=self.dropout),
-                                       nn.Linear(6 * hidden_size, hidden_size),
+                                       nn.Linear(5 * hidden_size, hidden_size),
                                        nn.LeakyReLU())
         self.h_map = nn.Sequential(nn.Dropout(p=self.dropout),
-                                   nn.Linear(6 * hidden_size, hidden_size),
+                                   nn.Linear(5 * hidden_size, hidden_size),
                                    nn.LeakyReLU())
 
         self.pConv = InterativeConv(hidden_size, k_size)
@@ -214,13 +214,13 @@ class CINConv(nn.Module):
         p_out_intra = self.pConv(premise_batch, filter_rep=p_rep)
         h_out_intra = self.hConv(hypothesis_batch, filter_rep=h_rep)
 
-        p_out = torch.cat((premise_batch, p_out_inter, p_out_intra, premise_batch - p_out_inter,
-                           torch.abs(premise_batch - p_out_inter),
-                           premise_batch * p_out_inter), dim=2)  # ma: [B, PL, 8 * H]
+        p_out = torch.cat((p_out_inter, p_out_intra, p_out_intra - p_out_inter,
+                           torch.abs(p_out_intra - p_out_inter),
+                           p_out_intra * p_out_inter), dim=2)  # ma: [B, PL, 8 * H]
 
-        h_out = torch.cat((hypothesis_batch, h_out_inter, h_out_intra, hypothesis_batch - h_out_inter,
-                           torch.abs(hypothesis_batch - h_out_inter),
-                           hypothesis_batch * h_out_inter), dim=2)  # ma: [B, PL, 8 * H]
+        h_out = torch.cat((h_out_inter, h_out_intra, h_out_intra - h_out_inter,
+                           torch.abs(h_out_intra - h_out_inter),
+                           h_out_intra * h_out_inter), dim=2)  # ma: [B, PL, 8 * H]
 
         p_out, h_out = self.p_map(p_out), self.h_map(h_out)
 
