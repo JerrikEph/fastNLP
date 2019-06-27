@@ -181,12 +181,12 @@ class CINConv(nn.Module):
         self.p_map = nn.Sequential(
             # nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
-            nn.LayerNorm([hidden_size]),
+            # nn.LayerNorm([hidden_size]),
             nn.LeakyReLU())
         self.h_map = nn.Sequential(
             # nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
-            nn.LayerNorm([hidden_size]),
+            # nn.LayerNorm([hidden_size]),
             nn.LeakyReLU())
 
         self.pConv = InterativeConv(hidden_size, k_size)
