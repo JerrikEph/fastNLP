@@ -239,10 +239,10 @@ class InterativeConv(nn.Module):
         in_features = hidden_size
         out_features = hidden_size*k_sz
         self.f_gen_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                          nn.LayerNorm([hidden_size]),
+                                          # nn.LayerNorm([hidden_size]),
                                           nn.LeakyReLU())
         self.inp_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                        nn.LayerNorm([hidden_size]),
+                                        # nn.LayerNorm([hidden_size]),
                                         nn.LeakyReLU())
 
         self.scale_factor = Parameter(torch.tensor(1.0))
@@ -280,7 +280,7 @@ class InterativeConv(nn.Module):
         kernel = kernel/math.sqrt(fan_in)*self.scale_factor
         inp = self.inp_linear(inputs)
         out = self.hyperConv(inp, kernel, k_sz=self.k_sz)
-        out = F.layer_norm(out, [self.h_sz])
+        # out = F.layer_norm(out, [self.h_sz])
         out = F.leaky_relu(out)
         return out
 
