@@ -179,10 +179,12 @@ class CINConv(nn.Module):
         self.dropout = dropout
 
         self.p_map = nn.Sequential(nn.Dropout(p=self.dropout),
-                                       nn.Linear(5 * hidden_size, hidden_size),
-                                       nn.LeakyReLU())
+                                   nn.Linear(6 * hidden_size, hidden_size),
+                                   nn.LayerNorm([hidden_size]),
+                                   nn.LeakyReLU())
         self.h_map = nn.Sequential(nn.Dropout(p=self.dropout),
-                                   nn.Linear(5 * hidden_size, hidden_size),
+                                   nn.Linear(6 * hidden_size, hidden_size),
+                                   nn.LayerNorm([hidden_size]),
                                    nn.LeakyReLU())
 
         self.pConv = InterativeConv(hidden_size, k_size)
@@ -214,11 +216,11 @@ class CINConv(nn.Module):
         p_out_intra = self.pConv(premise_batch, filter_rep=p_rep)
         h_out_intra = self.hConv(hypothesis_batch, filter_rep=h_rep)
 
-        p_out = torch.cat((p_out_inter, p_out_intra, p_out_intra - p_out_inter,
+        p_out = torch.cat((premise_batch, p_out_inter, p_out_intra, p_out_intra - p_out_inter,
                            torch.abs(p_out_intra - p_out_inter),
                            p_out_intra * p_out_inter), dim=2)  # ma: [B, PL, 8 * H]
 
-        h_out = torch.cat((h_out_inter, h_out_intra, h_out_intra - h_out_inter,
+        h_out = torch.cat((hypothesis_batch, h_out_inter, h_out_intra, h_out_intra - h_out_inter,
                            torch.abs(h_out_intra - h_out_inter),
                            h_out_intra * h_out_inter), dim=2)  # ma: [B, PL, 8 * H]
 
@@ -236,10 +238,14 @@ class InterativeConv(nn.Module):
         self.k_sz = k_sz
         in_features = hidden_size
         out_features = hidden_size*k_sz
-        self.activation = nn.LeakyReLU()
+        self.f_gen_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size), nn.Sigmoid())
+        self.inp_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
+                                        nn.LayerNorm([hidden_size]),
+                                        nn.LeakyReLU())
+
         self.scale_factor = Parameter(torch.tensor(1.0))
 
-        self.layer_norm=nn.LayerNorm([self.k_sz*self.h_sz, self.h_sz])
+        self.layer_norm = nn.LayerNorm([self.k_sz*self.h_sz, self.h_sz])
 
         self.P = Parameter(torch.Tensor(out_features, in_features))   # shape(h_sz*k, h_sz) -> (b_sz, k*h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
 
@@ -253,6 +259,8 @@ class InterativeConv(nn.Module):
         nn.init.xavier_uniform_(self.P)
         nn.init.xavier_uniform_(self.Q)
         nn.init.zeros_(self.B)
+        nn.init.xavier_uniform_(self.f_gen_linear[1].weight)
+        nn.init.xavier_uniform_(self.inp_linear[1].weight)
 
     def forward(self, inputs, filter_rep):
         '''
@@ -263,13 +271,15 @@ class InterativeConv(nn.Module):
         :return:
         '''
 
+        filter_rep = self.f_gen_linear(filter_rep)
         kernel = self.filterGen(filter_rep=filter_rep)  # shape(b_sz, k*h_sz, h_sz)
         fan_in, fan_out = self.k_sz*self.h_sz, self.h_sz
         kernel = self.layer_norm(kernel)
         kernel = kernel/math.sqrt(fan_in)*self.scale_factor
-
-        out = self.hyperConv(inputs, kernel, k_sz=self.k_sz)
-        out = self.activation(out)
+        inp = self.inp_linear(inputs)
+        out = self.hyperConv(inp, kernel, k_sz=self.k_sz)
+        out = F.layer_norm(out, [self.h_sz])
+        out = F.leaky_relu(out)
         return out
 
     def filterGen(self, filter_rep):
