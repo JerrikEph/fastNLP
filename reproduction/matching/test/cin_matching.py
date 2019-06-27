@@ -6,11 +6,11 @@ import random
 
 import numpy as np
 import torch
-from torch.optim import Adamax, SGD
+from torch.optim import Adamax, SGD, Adam
 from torch.optim.lr_scheduler import StepLR
 from torch import nn
 from fastNLP import cache_results
-from fastNLP.core import Trainer, Tester, Adam, AccuracyMetric, Const
+from fastNLP.core import Trainer, Tester, AccuracyMetric, Const
 from fastNLP.core.callback import GradientClipCallback, LRScheduler, FitlogCallback
 from fastNLP.modules.encoder.embedding import ElmoEmbedding, StaticEmbedding
 
@@ -112,7 +112,7 @@ else:
     raise RuntimeError(f'NOT support {arg.model} model yet!')
 
 
-optimizer = Adam(lr=arg.lr, model_params=model.parameters())
+optimizer = Adam(lr=arg.lr, params=model.parameters())
 scheduler = StepLR(optimizer, step_size=5, gamma=0.6)
 
 callbacks = [
