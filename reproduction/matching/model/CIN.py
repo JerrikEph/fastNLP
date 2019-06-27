@@ -282,7 +282,7 @@ class InterativeConv(nn.Module):
         kernel = kernel/math.sqrt(fan_in)*self.scale_factor
         inp = self.inp_linear(inputs)
         out = self.hyperConv(inp, kernel, k_sz=self.k_sz)
-        # out = F.layer_norm(out, [self.h_sz])
+        out = F.layer_norm(out, [self.h_sz])
         out = F.leaky_relu(out)
         return out
 
