@@ -180,11 +180,11 @@ class CINConv(nn.Module):
 
         self.p_map = nn.Sequential(nn.Dropout(p=self.dropout),
                                    nn.Linear(6 * hidden_size, hidden_size),
-                                   nn.LayerNorm([hidden_size]),
+                                   # nn.LayerNorm([hidden_size]),
                                    nn.LeakyReLU())
         self.h_map = nn.Sequential(nn.Dropout(p=self.dropout),
                                    nn.Linear(6 * hidden_size, hidden_size),
-                                   nn.LayerNorm([hidden_size]),
+                                   # nn.LayerNorm([hidden_size]),
                                    nn.LeakyReLU())
 
         self.pConv = InterativeConv(hidden_size, k_size)
@@ -273,7 +273,7 @@ class InterativeConv(nn.Module):
         :return:
         '''
 
-        # filter_rep = self.f_gen_linear(filter_rep)
+        filter_rep = self.f_gen_linear(filter_rep)
         kernel = self.filterGen(filter_rep=filter_rep)  # shape(b_sz, k*h_sz, h_sz)
         fan_in, fan_out = self.k_sz*self.h_sz, self.h_sz
         kernel = self.layer_norm(kernel)
