@@ -259,8 +259,8 @@ class InterativeConv(nn.Module):
         nn.init.xavier_uniform_(self.P)
         nn.init.xavier_uniform_(self.Q)
         nn.init.zeros_(self.B)
-        nn.init.xavier_uniform_(self.f_gen_linear[1].weight)
-        nn.init.xavier_uniform_(self.inp_linear[1].weight)
+        nn.init.xavier_uniform_(self.f_gen_linear[0].weight)
+        nn.init.xavier_uniform_(self.inp_linear[0].weight)
 
     def forward(self, inputs, filter_rep):
         '''
