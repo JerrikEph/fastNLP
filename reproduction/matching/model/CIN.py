@@ -238,7 +238,9 @@ class InterativeConv(nn.Module):
         self.k_sz = k_sz
         in_features = hidden_size
         out_features = hidden_size*k_sz
-        self.f_gen_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size), nn.Sigmoid())
+        self.f_gen_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
+                                          nn.LayerNorm([hidden_size]),
+                                          nn.LeakyReLU())
         self.inp_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
                                         nn.LayerNorm([hidden_size]),
                                         nn.LeakyReLU())
