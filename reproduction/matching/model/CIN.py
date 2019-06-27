@@ -273,7 +273,7 @@ class InterativeConv(nn.Module):
         :return:
         '''
 
-        filter_rep = self.f_gen_linear(filter_rep)
+        # filter_rep = self.f_gen_linear(filter_rep)
         kernel = self.filterGen(filter_rep=filter_rep)  # shape(b_sz, k*h_sz, h_sz)
         fan_in, fan_out = self.k_sz*self.h_sz, self.h_sz
         kernel = self.layer_norm(kernel)
