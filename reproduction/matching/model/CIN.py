@@ -75,7 +75,7 @@ class CINModel(BaseModel):
         b_max, _ = self.max_pooling(b_h, mask2, dim=1)
 
         out = torch.cat((a_max, b_max, a_max*b_max, a_max-b_max, torch.abs(a_max-b_max)), dim=1)  # v: [B, 8 * H]
-        logits = torch.tanh(self.classifier(out))
+        logits = self.classifier(out)
 
         if target is not None:
             loss_fct = CrossEntropyLoss()
