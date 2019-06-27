@@ -40,7 +40,7 @@ class CINModel(BaseModel):
 
         self.classifier = nn.Sequential(nn.Dropout(p=dropout_rate),
                                         nn.Linear(8 * hidden_size, hidden_size),
-                                        nn.LeakyReLU(),
+                                        nn.Tanh(),
                                         nn.Dropout(p=dropout_rate),
                                         nn.Linear(hidden_size, num_labels))
         nn.init.xavier_uniform_(self.classifier[1].weight.data)
@@ -181,13 +181,13 @@ class CINConv(nn.Module):
         self.p_map = nn.Sequential(
             # nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
-            nn.LayerNorm([hidden_size]),
-            nn.LeakyReLU())
+            # nn.LayerNorm([hidden_size]),
+            nn.Tanh())
         self.h_map = nn.Sequential(
             # nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
-            nn.LayerNorm([hidden_size]),
-            nn.LeakyReLU())
+            # nn.LayerNorm([hidden_size]),
+            nn.Tanh())
 
         self.pConv = InterativeConv(hidden_size, k_size)
         self.hConv = InterativeConv(hidden_size, k_size)
@@ -241,15 +241,15 @@ class InterativeConv(nn.Module):
         in_features = hidden_size
         out_features = hidden_size*k_sz
         self.f_gen_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                          nn.LayerNorm([hidden_size]),
-                                          nn.LeakyReLU())
+                                          # nn.LayerNorm([hidden_size]),
+                                          nn.Tanh())
         self.inp_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                        nn.LayerNorm([hidden_size]),
-                                        nn.LeakyReLU())
+                                        # nn.LayerNorm([hidden_size]),
+                                        nn.Tanh())
 
         self.scale_factor = Parameter(torch.tensor(1.0))
 
-        self.layer_norm = nn.LayerNorm([self.k_sz*self.h_sz, self.h_sz])
+        # self.layer_norm = nn.LayerNorm([self.k_sz*self.h_sz, self.h_sz])
 
         self.P = Parameter(torch.Tensor(out_features, in_features))   # shape(h_sz*k, h_sz) -> (b_sz, k*h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
 
@@ -278,12 +278,12 @@ class InterativeConv(nn.Module):
         filter_rep = self.f_gen_linear(filter_rep)
         kernel = self.filterGen(filter_rep=filter_rep)  # shape(b_sz, k*h_sz, h_sz)
         fan_in, fan_out = self.k_sz*self.h_sz, self.h_sz
-        kernel = self.layer_norm(kernel)
+        # kernel = self.layer_norm(kernel)
         kernel = kernel/math.sqrt(fan_in)*self.scale_factor
         inp = self.inp_linear(inputs)
         out = self.hyperConv(inp, kernel, k_sz=self.k_sz)
-        out = F.layer_norm(out, [self.h_sz])
-        out = F.leaky_relu(out)
+        # out = F.layer_norm(out, [self.h_sz])
+        out = F.tanh(out)
         return out
 
     def filterGen(self, filter_rep):
