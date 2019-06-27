@@ -192,8 +192,8 @@ class CINConv(nn.Module):
         self.pConv = InterativeConv(hidden_size, k_size)
         self.hConv = InterativeConv(hidden_size, k_size)
 
-        nn.init.xavier_uniform_(self.p_map[1].weight.data)
-        nn.init.xavier_uniform_(self.h_map[1].weight.data)
+        nn.init.xavier_uniform_(self.p_map[0].weight.data)
+        nn.init.xavier_uniform_(self.h_map[0].weight.data)
 
 
     @staticmethod
