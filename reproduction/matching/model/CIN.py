@@ -181,12 +181,12 @@ class CINConv(nn.Module):
         self.p_map = nn.Sequential(
             # nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
-            # nn.LayerNorm([hidden_size]),
+            nn.LayerNorm([hidden_size]),
             nn.LeakyReLU())
         self.h_map = nn.Sequential(
             # nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
-            # nn.LayerNorm([hidden_size]),
+            nn.LayerNorm([hidden_size]),
             nn.LeakyReLU())
 
         self.pConv = InterativeConv(hidden_size, k_size)
@@ -241,10 +241,10 @@ class InterativeConv(nn.Module):
         in_features = hidden_size
         out_features = hidden_size*k_sz
         self.f_gen_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                          # nn.LayerNorm([hidden_size]),
+                                          nn.LayerNorm([hidden_size]),
                                           nn.LeakyReLU())
         self.inp_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                        # nn.LayerNorm([hidden_size]),
+                                        nn.LayerNorm([hidden_size]),
                                         nn.LeakyReLU())
 
         self.scale_factor = Parameter(torch.tensor(1.0))
