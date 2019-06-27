@@ -17,7 +17,7 @@ from fastNLP.core.utils import seq_len_to_mask
 
 
 class CINModel(BaseModel):
-    def __init__(self, init_embedding: TokenEmbedding, hidden_size=None, num_labels=3, dropout_rate=0.3,
+    def __init__(self, init_embedding: TokenEmbedding, hidden_size=None, num_labels=3, k_sz=3, dropout_rate=0.3,
                  dropout_embed=0.3):
         super(CINModel, self).__init__()
         self.emb_factor = Parameter(torch.tensor(1.0))
@@ -33,7 +33,7 @@ class CINModel(BaseModel):
         #                                nn.ReLU())
         # nn.init.xavier_uniform_(self.interfere[1].weight.data)
 
-        self.cin_conv = CINConv(hidden_size=600, k_size=3, dropout=dropout_rate)
+        self.cin_conv = CINConv(hidden_size=hidden_size*2, k_size=k_sz, dropout=dropout_rate)
 
         self.rnn_high = BiRNN(self.embedding.embed_size*2, hidden_size, dropout_rate=dropout_rate)
         # self.rnn_high = LSTM(hidden_size, hidden_size, dropout=dropout_rate, bidirectional=True)
