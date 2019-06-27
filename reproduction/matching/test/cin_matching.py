@@ -112,8 +112,8 @@ else:
     raise RuntimeError(f'NOT support {arg.model} model yet!')
 
 
-optimizer = Adamax(lr=arg.lr, params=model.parameters())
-scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
+optimizer = Adam(lr=arg.lr, params=model.parameters())
+scheduler = StepLR(optimizer, step_size=5, gamma=0.6)
 
 callbacks = [
     GradientClipCallback(clip_value=10), LRScheduler(scheduler),
