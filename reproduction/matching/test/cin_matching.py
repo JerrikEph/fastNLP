@@ -112,7 +112,7 @@ else:
     raise RuntimeError(f'NOT support {arg.model} model yet!')
 
 
-optimizer = Adam(lr=arg.lr, params=model.parameters())
+optimizer = Adam(lr=arg.lr, model_params=model.parameters())
 scheduler = StepLR(optimizer, step_size=5, gamma=0.6)
 
 callbacks = [
