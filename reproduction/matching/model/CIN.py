@@ -40,7 +40,7 @@ class CINModel(BaseModel):
 
         self.classifier = nn.Sequential(nn.Dropout(p=dropout_rate),
                                         nn.Linear(8 * hidden_size, hidden_size),
-                                        nn.Tanh(),
+                                        nn.LeakyReLU(),
                                         nn.Dropout(p=dropout_rate),
                                         nn.Linear(hidden_size, num_labels))
         nn.init.xavier_uniform_(self.classifier[1].weight.data)
@@ -181,12 +181,12 @@ class CINConv(nn.Module):
         self.p_map = nn.Sequential(
             # nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
-            # nn.LayerNorm([hidden_size]),
+            nn.LayerNorm([hidden_size]),
             nn.LeakyReLU())
         self.h_map = nn.Sequential(
             # nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
-            # nn.LayerNorm([hidden_size]),
+            nn.LayerNorm([hidden_size]),
             nn.LeakyReLU())
 
         self.pConv = InterativeConv(hidden_size, k_size)
