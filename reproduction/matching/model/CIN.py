@@ -218,15 +218,15 @@ class CINConv(nn.Module):
         p_out_intra = self.pConv(premise_batch, filter_rep=p_rep)
         h_out_intra = self.hConv(hypothesis_batch, filter_rep=h_rep)
 
-        p_out = torch.cat((premise_batch, p_out_inter, p_out_intra, premise_batch - p_out_inter,
-                           torch.abs(premise_batch - p_out_inter),
-                           premise_batch * p_out_inter), dim=2)  # ma: [B, PL, 8 * H]
+        p_out = torch.cat((premise_batch, p_out_inter, p_out_intra, p_out_intra - p_out_inter,
+                           torch.abs(p_out_intra - p_out_inter),
+                           p_out_intra * p_out_inter), dim=2)  # ma: [B, PL, 8 * H]
 
-        h_out = torch.cat((hypothesis_batch, h_out_inter, h_out_intra, hypothesis_batch - h_out_inter,
-                           torch.abs(hypothesis_batch - h_out_inter),
-                           hypothesis_batch * h_out_inter), dim=2)  # ma: [B, PL, 8 * H]
+        h_out = torch.cat((hypothesis_batch, h_out_inter, h_out_intra, h_out_intra - h_out_inter,
+                           torch.abs(h_out_intra - h_out_inter),
+                           h_out_intra * h_out_inter), dim=2)  # ma: [B, PL, 8 * H]
 
-        p_out, h_out = self.p_map(p_out), self.h_map(h_out)
+        p_out, h_out = self.p_map(p_out), self.p_map(h_out)
 
 
         return p_out, h_out
