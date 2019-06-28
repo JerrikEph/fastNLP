@@ -109,7 +109,7 @@ if arg.model == 'bert':
 elif arg.model == 'esim':
     model = ESIMModel(embedding, num_labels=len(data_info.vocabs[Const.TARGET]))
 elif arg.model == 'cin':
-    model = CINModel(embedding, num_labels=len(data_info.vocabs[Const.TARGET]))
+    model = CINModel(embedding, num_labels=len(data_info.vocabs[Const.TARGET]), k_sz=arg.k_sz)
 else:
     raise RuntimeError(f'NOT support {arg.model} model yet!')
 
