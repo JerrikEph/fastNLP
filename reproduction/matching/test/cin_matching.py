@@ -7,6 +7,7 @@ import random
 import numpy as np
 import torch
 from torch.optim import Adamax, SGD, Adam
+from .adamW import AdamW
 from torch.optim.lr_scheduler import StepLR
 from torch import nn
 from fastNLP import cache_results
@@ -112,7 +113,7 @@ else:
     raise RuntimeError(f'NOT support {arg.model} model yet!')
 
 
-optimizer = Adamax(lr=arg.lr, params=model.parameters())
+optimizer = AdamW(lr=arg.lr, params=model.parameters(), weight_decay=5e-5)
 scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
 
 callbacks = [
