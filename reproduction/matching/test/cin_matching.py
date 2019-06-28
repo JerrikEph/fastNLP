@@ -31,6 +31,7 @@ argument.add_argument('--model', choices=['esim', 'bert', 'cin'], default='cin')
 argument.add_argument('--batch-size-per-gpu', type=int, default=128)
 argument.add_argument('--n-epochs', type=int, default=100)
 argument.add_argument('--lr', type=float, default=1e-4)
+argument.add_argument('--wd', type=float, default=1e-5)
 argument.add_argument('--seq-len-type', choices=['bert', 'mask', 'seq_len'], default='seq_len')
 argument.add_argument('--task', choices=['snli', 'rte', 'qnli'], default='snli')
 argument.add_argument('--testset-name', type=str, default='test')
@@ -113,7 +114,7 @@ else:
     raise RuntimeError(f'NOT support {arg.model} model yet!')
 
 
-optimizer = AdamW(lr=arg.lr, params=model.parameters(), weight_decay=5e-5)
+optimizer = AdamW(lr=arg.lr, params=model.parameters(), weight_decay=arg.wd)
 scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
 
 callbacks = [
