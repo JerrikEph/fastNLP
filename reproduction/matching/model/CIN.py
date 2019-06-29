@@ -385,4 +385,4 @@ class ParamResetCallback(Callback):
 
     def on_epoch_begin(self):
         if self.epoch < 10:
-            self.model.reset_classifier_params()
+            self.model.module.reset_classifier_params()
