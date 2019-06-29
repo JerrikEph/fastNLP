@@ -179,39 +179,47 @@ class CINConv(nn.Module):
         self.dropout = dropout
 
         self.p_map = nn.Sequential(
-            # nn.Dropout(p=self.dropout),
+            nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
             nn.LeakyReLU())
         self.h_map = nn.Sequential(
-            # nn.Dropout(p=self.dropout),
+            nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
             nn.LeakyReLU())
 
-        self.p_rep_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                          nn.LayerNorm([hidden_size]),
-                                          nn.LeakyReLU())
-        self.h_rep_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                          nn.LayerNorm([hidden_size]),
-                                          nn.LeakyReLU())
-        self.p_inp_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                          nn.LayerNorm([hidden_size]),
-                                          nn.LeakyReLU())
+        self.p_rep_linear = nn.Sequential(
+            nn.Dropout(p=self.dropout),
+            nn.Linear(hidden_size, hidden_size),
+            nn.LayerNorm([hidden_size]),
+            nn.LeakyReLU())
+        self.h_rep_linear = nn.Sequential(
+            nn.Dropout(p=self.dropout),
+            nn.Linear(hidden_size, hidden_size),
+            nn.LayerNorm([hidden_size]),
+            nn.LeakyReLU())
+        self.p_inp_linear = nn.Sequential(
+            nn.Dropout(p=self.dropout),
+            nn.Linear(hidden_size, hidden_size),
+            nn.LayerNorm([hidden_size]),
+            nn.LeakyReLU())
 
-        self.h_inp_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                          nn.LayerNorm([hidden_size]),
-                                          nn.LeakyReLU())
+        self.h_inp_linear = nn.Sequential(
+            nn.Dropout(p=self.dropout),
+            nn.Linear(hidden_size, hidden_size),
+            nn.LayerNorm([hidden_size]),
+            nn.LeakyReLU())
 
         self.pConv = InterativeConv(hidden_size, k_size)
         self.hConv = InterativeConv(hidden_size, k_size)
 
-        nn.init.xavier_uniform_(self.p_map[0].weight.data)
-        nn.init.xavier_uniform_(self.h_map[0].weight.data)
-        nn.init.xavier_uniform_(self.p_rep_linear[0].weight)
-        nn.init.xavier_uniform_(self.h_rep_linear[0].weight)
-        nn.init.xavier_uniform_(self.p_inp_linear[0].weight)
-        nn.init.xavier_uniform_(self.h_inp_linear[0].weight)
+        nn.init.xavier_uniform_(self.p_map[1].weight.data)
+        nn.init.xavier_uniform_(self.h_map[1].weight.data)
+        nn.init.xavier_uniform_(self.p_rep_linear[1].weight)
+        nn.init.xavier_uniform_(self.h_rep_linear[1].weight)
+        nn.init.xavier_uniform_(self.p_inp_linear[1].weight)
+        nn.init.xavier_uniform_(self.h_inp_linear[1].weight)
 
 
     @staticmethod
