@@ -181,26 +181,26 @@ class CINConv(nn.Module):
         self.p_map = nn.Sequential(
             # nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
-            # nn.LayerNorm([hidden_size]),
+            nn.LayerNorm([hidden_size]),
             nn.LeakyReLU())
         self.h_map = nn.Sequential(
             # nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
-            # nn.LayerNorm([hidden_size]),
+            nn.LayerNorm([hidden_size]),
             nn.LeakyReLU())
 
         self.p_rep_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                          # nn.LayerNorm([hidden_size]),
+                                          nn.LayerNorm([hidden_size]),
                                           nn.LeakyReLU())
         self.h_rep_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                          # nn.LayerNorm([hidden_size]),
+                                          nn.LayerNorm([hidden_size]),
                                           nn.LeakyReLU())
         self.p_inp_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                          # nn.LayerNorm([hidden_size]),
+                                          nn.LayerNorm([hidden_size]),
                                           nn.LeakyReLU())
 
         self.h_inp_linear = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                          # nn.LayerNorm([hidden_size]),
+                                          nn.LayerNorm([hidden_size]),
                                           nn.LeakyReLU())
 
         self.pConv = InterativeConv(hidden_size, k_size)
@@ -265,7 +265,7 @@ class InterativeConv(nn.Module):
 
         self.scale_factor = Parameter(torch.tensor(1.0))
 
-        # self.layer_norm = nn.LayerNorm([self.k_sz*self.h_sz, self.h_sz])
+        self.layer_norm = nn.LayerNorm([self.k_sz*self.h_sz, self.h_sz])
 
         self.P = Parameter(torch.Tensor(out_features, in_features))   # shape(h_sz*k, h_sz) -> (b_sz, k*h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
 
@@ -296,7 +296,7 @@ class InterativeConv(nn.Module):
         kernel = kernel/math.sqrt(fan_in)*self.scale_factor
 
         out = self.hyperConv(inputs, kernel, k_sz=self.k_sz)
-        # out = F.layer_norm(out, [self.h_sz])
+        out = F.layer_norm(out, [self.h_sz])
         out = F.leaky_relu(out)
         return out
 
