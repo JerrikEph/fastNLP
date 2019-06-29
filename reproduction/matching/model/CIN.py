@@ -231,8 +231,8 @@ class CINConv(nn.Module):
         h_rep, _ = self.max_pooling(hypothesis_batch, mask=hypothesis_mask)
         p_rep = self.p_rep_linear(p_rep)
         h_rep = self.h_rep_linear(h_rep)
-        premise_batch = self.p_inp_linear(premise_batch)
-        premise_batch = self.h_inp_linear(premise_batch)
+        # premise_batch = self.p_inp_linear(premise_batch)
+        # premise_batch = self.h_inp_linear(premise_batch)
 
         p_out_inter = self.pConv(premise_batch, filter_rep=h_rep)
         h_out_inter = self.hConv(hypothesis_batch, filter_rep=p_rep)
