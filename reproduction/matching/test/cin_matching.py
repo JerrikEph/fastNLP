@@ -18,7 +18,7 @@ from fastNLP.modules.encoder.embedding import ElmoEmbedding, StaticEmbedding
 from reproduction.matching.data.MatchingDataLoader import SNLILoader, RTELoader, QNLILoader
 from reproduction.matching.model.bert import BertForNLI
 from reproduction.matching.model.esim import ESIMModel
-from reproduction.matching.model.CIN import CINModel
+from reproduction.matching.model.CIN import CINModel, ParamResetCallback
 
 import fitlog
 fitlog.debug()
@@ -119,7 +119,7 @@ optimizer = AdamW(lr=arg.lr, params=model.parameters(), weight_decay=arg.wd)
 scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
 
 callbacks = [
-    GradientClipCallback(clip_value=10), LRScheduler(scheduler),
+    GradientClipCallback(clip_value=10), LRScheduler(scheduler), ParamResetCallback()
 ]
 if arg.task in ['snli']:
     callbacks.append(FitlogCallback(data_info.datasets[arg.testset_name], verbose=1))

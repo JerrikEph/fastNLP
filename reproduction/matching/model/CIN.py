@@ -12,6 +12,7 @@ from fastNLP.modules.encoder.embedding import TokenEmbedding
 from fastNLP.modules.encoder.lstm import LSTM
 from fastNLP.core.const import Const
 from fastNLP.core.utils import seq_len_to_mask
+from fastNLP.core.callback import Callback
 
 #args = type('args', (), {})()
 
@@ -43,6 +44,9 @@ class CINModel(BaseModel):
                                         nn.LeakyReLU(),
                                         nn.Dropout(p=dropout_rate),
                                         nn.Linear(hidden_size, num_labels))
+        self.reset_params()
+
+    def reset_classifier_params(self):
         nn.init.xavier_uniform_(self.classifier[1].weight.data)
         nn.init.xavier_uniform_(self.classifier[4].weight.data)
 
@@ -369,3 +373,13 @@ class InterativeConv(nn.Module):
                 collect.append(o[:, -tstp:, :])
         out = torch.cat(collect, dim=-1)
         return out
+
+
+class ParamResetCallback(Callback):
+
+    def __init__(self):
+        super(ParamResetCallback, self).__init__()
+
+    def on_epoch_begin(self):
+        if self.epoch < 10:
+            self.model.reset_classifier_params()
