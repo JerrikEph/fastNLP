@@ -41,10 +41,10 @@ class CINModel(BaseModel):
 
         self.classifier = nn.Sequential(nn.Dropout(p=dropout_rate),
                                         nn.Linear(8 * hidden_size, hidden_size),
-                                        nn.LeakyReLU(),
+                                        nn.Tanh(),
                                         nn.Dropout(p=dropout_rate),
                                         nn.Linear(hidden_size, num_labels))
-        self.reset_params()
+        self.reset_classifier_params()
 
     def reset_classifier_params(self):
         nn.init.xavier_uniform_(self.classifier[1].weight.data)
@@ -186,34 +186,34 @@ class CINConv(nn.Module):
             nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
-            nn.LeakyReLU())
+            nn.Tanh())
         self.h_map = nn.Sequential(
             nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
-            nn.LeakyReLU())
+            nn.Tanh())
 
         self.p_rep_linear = nn.Sequential(
             nn.Dropout(p=self.dropout),
             nn.Linear(hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
-            nn.LeakyReLU())
+            nn.Tanh())
         self.h_rep_linear = nn.Sequential(
             nn.Dropout(p=self.dropout),
             nn.Linear(hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
-            nn.LeakyReLU())
+            nn.Tanh())
         self.p_inp_linear = nn.Sequential(
             nn.Dropout(p=self.dropout),
             nn.Linear(hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
-            nn.LeakyReLU())
+            nn.Tanh())
 
         self.h_inp_linear = nn.Sequential(
             nn.Dropout(p=self.dropout),
             nn.Linear(hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
-            nn.LeakyReLU())
+            nn.Tanh())
 
         self.pConv = InterativeConv(hidden_size, k_size)
         self.hConv = InterativeConv(hidden_size, k_size)
@@ -309,7 +309,7 @@ class InterativeConv(nn.Module):
 
         out = self.hyperConv(inputs, kernel, k_sz=self.k_sz)
         out = F.layer_norm(out, [self.h_sz])
-        out = F.leaky_relu(out)
+        out = F.tanh(out)
         return out
 
     def filterGen(self, filter_rep):
