@@ -380,6 +380,9 @@ class ParamResetCallback(Callback):
     def __init__(self):
         super(ParamResetCallback, self).__init__()
 
+    def on_epoch_end(self):
+        print('\n')
+
     def on_epoch_begin(self):
         if self.epoch < 10:
             self.model.reset_classifier_params()
