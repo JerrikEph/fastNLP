@@ -39,7 +39,7 @@ class CINModel(BaseModel):
         # self.rnn_high = LSTM(hidden_size, hidden_size, dropout=dropout_rate, bidirectional=True)
 
         self.classifier = nn.Sequential(nn.Dropout(p=dropout_rate),
-                                        nn.Linear(10 * hidden_size, hidden_size),
+                                        nn.Linear(8 * hidden_size, hidden_size),
                                         nn.Tanh(),
                                         nn.Dropout(p=dropout_rate),
                                         nn.Linear(hidden_size, num_labels))
@@ -69,12 +69,12 @@ class CINModel(BaseModel):
         a_h = self.rnn_high(ai, mask1.byte())  # ma: [B, PL, 2 * H]
         b_h = self.rnn_high(bi, mask2.byte())
 
-        # a_avg = self.mean_pooling(a_h, mask1, dim=1)
+        a_avg = self.mean_pooling(a_h, mask1, dim=1)
         a_max, _ = self.max_pooling(a_h, mask1, dim=1)
-        # b_avg = self.mean_pooling(b_h, mask2, dim=1)
+        b_avg = self.mean_pooling(b_h, mask2, dim=1)
         b_max, _ = self.max_pooling(b_h, mask2, dim=1)
 
-        out = torch.cat((a_max, b_max, a_max*b_max, a_max-b_max, torch.abs(a_max-b_max)), dim=1)  # v: [B, 10 * H]
+        out = torch.cat((a_max, b_max, a_avg, b_avg), dim=1)  # v: [B, 10 * H]
         logits = self.classifier(out)
 
         if target is not None:
