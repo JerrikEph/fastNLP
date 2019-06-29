@@ -124,7 +124,7 @@ callbacks = [
 if arg.task in ['snli']:
     callbacks.append(FitlogCallback(data_info.datasets[arg.testset_name], verbose=1))
 
-trainer = Trainer(train_data=data_info.datasets['train'], model=model,
+trainer = Trainer(train_data=data_info.datasets['train'][:20000], model=model,
                   optimizer=optimizer, num_workers=2,
                   batch_size=torch.cuda.device_count() * arg.batch_size_per_gpu,
                   n_epochs=arg.n_epochs, print_every=-1,
