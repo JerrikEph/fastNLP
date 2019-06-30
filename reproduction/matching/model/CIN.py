@@ -89,8 +89,8 @@ class CINModel(BaseModel):
         else:
             return {Const.OUTPUT: logits}
 
-    def predict(self, **kwargs):
-        return self.forward(**kwargs)
+    # def predict(self, **kwargs):
+    #     return self.forward(**kwargs)
 
     # input [batch_size, len , hidden]
     # mask  [batch_size, len] (111...00)
@@ -312,7 +312,6 @@ class InterativeConv(nn.Module):
         super(InterativeConv, self).__init__()
         self.h_sz = hidden_size
         self.k_sz = k_sz
-
 
     def forward(self, inputs, kernel):
         '''
