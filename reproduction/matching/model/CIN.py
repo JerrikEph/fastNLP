@@ -215,8 +215,26 @@ class CINConv(nn.Module):
             nn.Linear(hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]))
 
+        in_features = hidden_size
+        out_features = hidden_size * self.k_sz
+        self.scale_factor = Parameter(torch.tensor(1.0))
+        self.layer_norm = nn.LayerNorm([self.k_sz * self.h_sz, self.h_sz])
+        # shape(h_sz*k, h_sz) -> (b_sz, k*h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
+        self.P = Parameter(torch.Tensor(out_features, in_features))
+        # shape(k*h_sz, h_sz) -> (1, k, h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
+        self.Q = Parameter(torch.Tensor(out_features, in_features))
+        self.B = Parameter(torch.Tensor(self.k_sz, hidden_size, hidden_size))
         self.pConv = InterativeConv(hidden_size, k_size)
         self.hConv = InterativeConv(hidden_size, k_size)
+
+        self.reset_parameters()
+
+
+
+    def reset_parameters(self):
+        nn.init.xavier_uniform_(self.P)
+        nn.init.xavier_uniform_(self.Q)
+        nn.init.zeros_(self.B)
 
         nn.init.xavier_uniform_(self.p_map[1].weight.data)
         nn.init.xavier_uniform_(self.h_map[1].weight.data)
@@ -256,7 +274,6 @@ class CINConv(nn.Module):
         PzQ = Pz.matmul(Q) + B
         kernel = PzQ.view(size=[b_sz, self.k_sz*self.h_sz, self.h_sz])   # shape(b_sz, k*h_sz, h_sz)
 
-        kernel = self.filterGen(filter_rep=filter_rep)  # shape(b_sz, k*h_sz, h_sz)
         fan_in, fan_out = self.k_sz * self.h_sz, self.h_sz
         # kernel = self.layer_norm(kernel)
         kernel = kernel / math.sqrt(fan_in) * self.scale_factor
@@ -283,9 +300,7 @@ class CINConv(nn.Module):
         h_out = torch.cat((hypothesis_batch, h_out_inter, h_out_intra, h_out_intra - h_out_inter,
                            torch.abs(h_out_intra - h_out_inter),
                            h_out_intra * h_out_inter), dim=2)  # ma: [B, PL, 8 * H]
-
         p_out, h_out = self.p_map(p_out), self.h_map(h_out)
-
 
         return p_out, h_out
 
@@ -296,25 +311,7 @@ class InterativeConv(nn.Module):
         super(InterativeConv, self).__init__()
         self.h_sz = hidden_size
         self.k_sz = k_sz
-        in_features = hidden_size
-        out_features = hidden_size*k_sz
 
-        self.scale_factor = Parameter(torch.tensor(1.0))
-
-        self.layer_norm = nn.LayerNorm([self.k_sz*self.h_sz, self.h_sz])
-
-        self.P = Parameter(torch.Tensor(out_features, in_features))   # shape(h_sz*k, h_sz) -> (b_sz, k*h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
-
-        self.Q = Parameter(torch.Tensor(out_features, in_features))   # shape(k*h_sz, h_sz) -> (1, k, h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
-
-        self.B = Parameter(torch.Tensor(k_sz, hidden_size, hidden_size))
-
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        nn.init.xavier_uniform_(self.P)
-        nn.init.xavier_uniform_(self.Q)
-        nn.init.zeros_(self.B)
 
     def forward(self, inputs, kernel):
         '''
