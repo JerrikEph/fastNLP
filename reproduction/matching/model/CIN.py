@@ -80,7 +80,9 @@ class CINModel(nn.Module):
 
         out = torch.cat((a_max, b_max, a_avg, b_avg), dim=1)  # v: [B, 10 * H]
         logits = self.classifier(out)
-        logits = torch.clamp(logits, min=-1.0, max=1.0)
+        # logits = torch.clamp(logits, min=-1.0, max=1.0)
+        logits = F.tanh(logits)
+
         if target is not None:
             loss_fct = CrossEntropyLoss()
             loss = loss_fct(logits, target)
