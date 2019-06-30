@@ -120,7 +120,7 @@ optimizer = AdamW(lr=arg.lr, params=model.parameters(), weight_decay=arg.wd)
 scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
 
 callbacks = [
-    GradientClipCallback(clip_value=10), LRScheduler(scheduler), ParamResetCallback()
+    GradientClipCallback(clip_value=3.0), LRScheduler(scheduler), ParamResetCallback()
 ]
 if arg.task in ['snli']:
     callbacks.append(FitlogCallback(data_info.datasets[arg.testset_name], verbose=1))
