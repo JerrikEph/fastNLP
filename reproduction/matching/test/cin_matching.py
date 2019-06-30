@@ -130,7 +130,9 @@ trainer = Trainer(train_data=data_info.datasets['train'], model=model,
                   batch_size=torch.cuda.device_count() * arg.batch_size_per_gpu,
                   n_epochs=arg.n_epochs, print_every=-1,
                   dev_data=data_info.datasets['dev'],
-                  metrics=AccuracyMetric(), metric_key='acc', device=[i for i in range(torch.cuda.device_count())],
+                  metrics=AccuracyMetric(), metric_key='acc',
+                  device=[i for i in range(torch.cuda.device_count())],
+                  validate_every= 100,
                   check_code_level=-1, callbacks=callbacks)
 trainer.train(load_best_model=True)
 
