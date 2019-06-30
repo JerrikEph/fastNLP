@@ -186,12 +186,12 @@ class CINConv(nn.Module):
             nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
-            nn.Tanh())
+            nn.LeakyReLU())
         self.h_map = nn.Sequential(
             nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
-            nn.Tanh())
+            nn.LeakyReLU())
 
         self.p_rep_linear = nn.Sequential(
             nn.Dropout(p=self.dropout),
@@ -206,14 +206,12 @@ class CINConv(nn.Module):
         self.p_inp_linear = nn.Sequential(
             nn.Dropout(p=self.dropout),
             nn.Linear(hidden_size, hidden_size),
-            nn.LayerNorm([hidden_size]),
-            nn.Tanh())
+            nn.LayerNorm([hidden_size]))
 
         self.h_inp_linear = nn.Sequential(
             nn.Dropout(p=self.dropout),
             nn.Linear(hidden_size, hidden_size),
-            nn.LayerNorm([hidden_size]),
-            nn.Tanh())
+            nn.LayerNorm([hidden_size]))
 
         self.pConv = InterativeConv(hidden_size, k_size)
         self.hConv = InterativeConv(hidden_size, k_size)
@@ -238,19 +236,43 @@ class CINConv(nn.Module):
         masks = masks.expand(-1, -1, input.size(2)).float()
         return torch.max(input + masks.le(0.5).float() * -my_inf, dim=dim)
 
+    def filterGen(self, filter_rep):
+        '''
+
+        :param filter_rep: shape(b_sz, h_sz)
+        :param k_sz:
+        :return:
+        '''
+        b_sz = list(filter_rep.size())[0]
+        z = filter_rep.view(size=[b_sz, 1, self.h_sz])
+        P = self.P.view(size=[1, self.k_sz*self.h_sz, self.h_sz])
+        Q = self.Q.view(size=[1, self.k_sz, self.h_sz, self.h_sz])
+        B = self.B.view(size=[1, self.k_sz, self.h_sz, self.h_sz])
+
+        Pz = P*z   # shape(b_sz, k*h, h)
+        Pz = Pz.view(size=[b_sz, self.k_sz, self.h_sz, self.h_sz])
+        PzQ = Pz.matmul(Q) + B
+        kernel = PzQ.view(size=[b_sz, self.k_sz*self.h_sz, self.h_sz])   # shape(b_sz, k*h_sz, h_sz)
+
+        kernel = self.filterGen(filter_rep=filter_rep)  # shape(b_sz, k*h_sz, h_sz)
+        fan_in, fan_out = self.k_sz * self.h_sz, self.h_sz
+        # kernel = self.layer_norm(kernel)
+        kernel = kernel / math.sqrt(fan_in) * self.scale_factor
+        return kernel
+
     def forward(self, premise_batch, premise_mask, hypothesis_batch, hypothesis_mask):
-        p_rep, _ = self.max_pooling(premise_batch, mask=premise_mask)
-        h_rep, _ = self.max_pooling(hypothesis_batch, mask=hypothesis_mask)
-        p_rep = self.p_rep_linear(p_rep)
-        h_rep = self.h_rep_linear(h_rep)
+        p_rep, _ = self.max_pooling(self.p_rep_linear(premise_batch), mask=premise_mask)
+        h_rep, _ = self.max_pooling(self.h_rep_linear(hypothesis_batch), mask=hypothesis_mask)
+        p_kernel = self.filterGen(p_rep)
+        h_kernel = self.filterGen(h_rep)
         premise_batch = self.p_inp_linear(premise_batch)
-        premise_batch = self.h_inp_linear(premise_batch)
+        hypothesis_batch = self.h_inp_linear(hypothesis_batch)
 
-        p_out_inter = self.pConv(premise_batch, filter_rep=h_rep)
-        h_out_inter = self.hConv(hypothesis_batch, filter_rep=p_rep)
+        p_out_inter = self.pConv(premise_batch, kernel=h_kernel)
+        h_out_inter = self.hConv(hypothesis_batch, kernel=p_kernel)
 
-        p_out_intra = self.pConv(premise_batch, filter_rep=p_rep)
-        h_out_intra = self.hConv(hypothesis_batch, filter_rep=h_rep)
+        p_out_intra = self.pConv(premise_batch, kernel=p_kernel)
+        h_out_intra = self.hConv(hypothesis_batch, kernel=h_kernel)
 
         p_out = torch.cat((premise_batch, p_out_inter, p_out_intra, p_out_intra - p_out_inter,
                            torch.abs(p_out_intra - p_out_inter),
@@ -260,7 +282,7 @@ class CINConv(nn.Module):
                            torch.abs(h_out_intra - h_out_inter),
                            h_out_intra * h_out_inter), dim=2)  # ma: [B, PL, 8 * H]
 
-        p_out, h_out = self.p_map(p_out), self.p_map(h_out)
+        p_out, h_out = self.p_map(p_out), self.h_map(h_out)
 
 
         return p_out, h_out
@@ -292,7 +314,7 @@ class InterativeConv(nn.Module):
         nn.init.xavier_uniform_(self.Q)
         nn.init.zeros_(self.B)
 
-    def forward(self, inputs, filter_rep):
+    def forward(self, inputs, kernel):
         '''
 
         :param inputs:
@@ -301,35 +323,9 @@ class InterativeConv(nn.Module):
         :return:
         '''
 
-
-        kernel = self.filterGen(filter_rep=filter_rep)  # shape(b_sz, k*h_sz, h_sz)
-        fan_in, fan_out = self.k_sz*self.h_sz, self.h_sz
-        # kernel = self.layer_norm(kernel)
-        kernel = kernel/math.sqrt(fan_in)*self.scale_factor
-
         out = self.hyperConv(inputs, kernel, k_sz=self.k_sz)
         out = F.layer_norm(out, [self.h_sz])
-        out = F.tanh(out)
         return out
-
-    def filterGen(self, filter_rep):
-        '''
-
-        :param filter_rep: shape(b_sz, h_sz)
-        :param k_sz:
-        :return:
-        '''
-        b_sz = list(filter_rep.size())[0]
-        z = filter_rep.view(size=[b_sz, 1, self.h_sz])
-        P = self.P.view(size=[1, self.k_sz*self.h_sz, self.h_sz])
-        Q = self.Q.view(size=[1, self.k_sz, self.h_sz, self.h_sz])
-        B = self.B.view(size=[1, self.k_sz, self.h_sz, self.h_sz])
-
-        Pz = P*z   # shape(b_sz, k*h, h)
-        Pz = Pz.view(size=[b_sz, self.k_sz, self.h_sz, self.h_sz])
-        PzQ = Pz.matmul(Q) + B
-        kernel = PzQ.view(size=[b_sz, self.k_sz*self.h_sz, self.h_sz])   # shape(b_sz, k*h_sz, h_sz)
-        return kernel
 
     @staticmethod
     def hyperConv(inputs, kernel, k_sz):
@@ -384,7 +380,7 @@ class ParamResetCallback(Callback):
         print('\n')
 
 
-    def on_step_end(self):
-        if self.step % 10 ==1 and self.step < 10000:
-            self.model.module.reset_classifier_params()
+    # def on_step_end(self):
+    #     if self.step % 10 ==1 and self.step < 10000:
+    #         self.model.module.reset_classifier_params()
             # print('Classifier weight reset')
