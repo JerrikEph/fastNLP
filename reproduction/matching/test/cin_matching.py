@@ -123,7 +123,7 @@ callbacks = [
     GradientClipCallback(clip_value=10), LRScheduler(scheduler), ParamResetCallback()
 ]
 if arg.task in ['snli']:
-    callbacks.append(FitlogCallback(data_info.datasets[arg.testset_name], verbose=1))
+    callbacks.append(FitlogCallback(data_info.datasets[arg.testset_name], verbose=1, log_loss_every=5))
 
 trainer = Trainer(train_data=data_info.datasets['train'], model=model,
                   optimizer=optimizer, num_workers=2,
