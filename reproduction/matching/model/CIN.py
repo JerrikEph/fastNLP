@@ -184,6 +184,20 @@ class CINConv(nn.Module):
         self.h_sz = hidden_size
         self.k_sz = k_size
 
+        in_features = hidden_size
+        out_features = hidden_size * self.k_sz
+        self.scale_factor = Parameter(torch.tensor(1.0))
+        self.layer_norm = nn.LayerNorm([self.k_sz * self.h_sz, self.h_sz])
+        # shape(h_sz*k, h_sz) -> (b_sz, k*h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
+        self.P = Parameter(torch.Tensor(out_features, in_features))
+        # shape(k*h_sz, h_sz) -> (1, k, h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
+        self.Q = Parameter(torch.Tensor(out_features, in_features))
+        self.B = Parameter(torch.Tensor(self.k_sz, hidden_size, hidden_size))
+        self.b_p_inter = Parameter(torch.zeros(hidden_size))
+        self.b_h_inter = Parameter(torch.zeros(hidden_size))
+        self.b_p_intra = Parameter(torch.zeros(hidden_size))
+        self.b_h_intra = Parameter(torch.zeros(hidden_size))
+
         self.p_map = nn.Sequential(
             nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
@@ -215,21 +229,9 @@ class CINConv(nn.Module):
             nn.Linear(hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]))
 
-        in_features = hidden_size
-        out_features = hidden_size * self.k_sz
-        self.scale_factor = Parameter(torch.tensor(1.0))
-        self.layer_norm = nn.LayerNorm([self.k_sz * self.h_sz, self.h_sz])
-        # shape(h_sz*k, h_sz) -> (b_sz, k*h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
-        self.P = Parameter(torch.Tensor(out_features, in_features))
-        # shape(k*h_sz, h_sz) -> (1, k, h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
-        self.Q = Parameter(torch.Tensor(out_features, in_features))
-        self.B = Parameter(torch.Tensor(self.k_sz, hidden_size, hidden_size))
-        self.pConv = InterativeConv(hidden_size, k_size)
-        self.hConv = InterativeConv(hidden_size, k_size)
+        self.hypConv = InterativeConv(hidden_size, k_size)
 
         self.reset_parameters()
-
-
 
     def reset_parameters(self):
         nn.init.xavier_uniform_(self.P)
@@ -242,7 +244,6 @@ class CINConv(nn.Module):
         nn.init.xavier_uniform_(self.h_rep_linear[1].weight)
         nn.init.xavier_uniform_(self.p_inp_linear[1].weight)
         nn.init.xavier_uniform_(self.h_inp_linear[1].weight)
-
 
     @staticmethod
     def mean_pooling(input, mask, dim=1):
@@ -287,11 +288,11 @@ class CINConv(nn.Module):
         premise_batch = self.p_inp_linear(premise_batch)
         hypothesis_batch = self.h_inp_linear(hypothesis_batch)
 
-        p_out_inter = self.pConv(premise_batch, kernel=h_kernel)
-        h_out_inter = self.hConv(hypothesis_batch, kernel=p_kernel)
+        p_out_inter = self.hypConv(premise_batch, kernel=h_kernel) + self.b_p_inter
+        h_out_inter = self.hypConv(hypothesis_batch, kernel=p_kernel) +self.b_h_inter
 
-        p_out_intra = self.pConv(premise_batch, kernel=p_kernel)
-        h_out_intra = self.hConv(hypothesis_batch, kernel=h_kernel)
+        p_out_intra = self.hypConv(premise_batch, kernel=p_kernel) + self.b_p_intra
+        h_out_intra = self.hypConv(hypothesis_batch, kernel=h_kernel) + self.b_h_intra
 
         p_out = torch.cat((premise_batch, p_out_inter, p_out_intra, p_out_intra - p_out_inter,
                            torch.abs(p_out_intra - p_out_inter),
