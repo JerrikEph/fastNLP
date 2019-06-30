@@ -385,6 +385,6 @@ class ParamResetCallback(Callback):
 
 
     def on_step_end(self):
-        if self.step % 50 ==1 and self.step < 10000:
+        if self.step % 10 ==1 and self.step < 10000:
             self.model.module.reset_classifier_params()
-            print('Classifier weight reset')
+            # print('Classifier weight reset')

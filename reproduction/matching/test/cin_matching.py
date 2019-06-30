@@ -21,6 +21,7 @@ from reproduction.matching.model.esim import ESIMModel
 from reproduction.matching.model.CIN import CINModel, ParamResetCallback
 
 import fitlog
+
 fitlog.set_log_dir("Logs")
 
 import argparse
