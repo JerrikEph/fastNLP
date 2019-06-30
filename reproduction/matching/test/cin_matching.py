@@ -132,7 +132,7 @@ trainer = Trainer(train_data=data_info.datasets['train'], model=model,
                   dev_data=data_info.datasets['dev'],
                   metrics=AccuracyMetric(), metric_key='acc',
                   device=[i for i in range(torch.cuda.device_count())],
-                  validate_every=100,
+                  validate_every=30,
                   check_code_level=-1, callbacks=callbacks)
 trainer.train(load_best_model=True)
 
