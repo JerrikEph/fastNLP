@@ -384,5 +384,6 @@ class ParamResetCallback(Callback):
         print('\n')
 
     def on_epoch_begin(self):
-        if self.epoch < 10:
+        if self.epoch < 30:
             self.model.module.reset_classifier_params()
+            print('Classifier weight reset')
