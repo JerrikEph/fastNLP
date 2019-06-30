@@ -17,7 +17,7 @@ from fastNLP.core.callback import Callback
 #args = type('args', (), {})()
 
 
-class CINModel(BaseModel):
+class CINModel(nn.Module):
     def __init__(self, init_embedding: TokenEmbedding, hidden_size=None, num_labels=3, k_sz=3, dropout_rate=0.3,
                  dropout_embed=0.3):
         super(CINModel, self).__init__()
