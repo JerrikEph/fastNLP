@@ -181,6 +181,8 @@ class CINConv(nn.Module):
     def __init__(self, hidden_size, k_size, dropout):
         super(CINConv, self).__init__()
         self.dropout = dropout
+        self.h_sz = hidden_size
+        self.k_sz = k_size
 
         self.p_map = nn.Sequential(
             nn.Dropout(p=self.dropout),
