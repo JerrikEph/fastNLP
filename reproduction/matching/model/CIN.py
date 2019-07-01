@@ -204,12 +204,12 @@ class CINConv(nn.Module):
             nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
-            nn.LeakyReLU())
+            nn.Tanh())
         self.h_map = nn.Sequential(
             nn.Dropout(p=self.dropout),
             nn.Linear(6 * hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
-            nn.LeakyReLU())
+            nn.Tanh())
 
         self.p_rep_linear = nn.Sequential(
             nn.Dropout(p=self.dropout),
@@ -221,17 +221,17 @@ class CINConv(nn.Module):
             nn.Linear(hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
             nn.Tanh())
-        self.p_inp_linear = nn.Sequential(
-            nn.Dropout(p=self.dropout),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LayerNorm([hidden_size]),
-            nn.LeakyReLU())
-
-        self.h_inp_linear = nn.Sequential(
-            nn.Dropout(p=self.dropout),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LayerNorm([hidden_size]),
-            nn.LeakyReLU())
+        # self.p_inp_linear = nn.Sequential(
+        #     nn.Dropout(p=self.dropout),
+        #     nn.Linear(hidden_size, hidden_size),
+        #     nn.LayerNorm([hidden_size]),
+        #     nn.LeakyReLU())
+        #
+        # self.h_inp_linear = nn.Sequential(
+        #     nn.Dropout(p=self.dropout),
+        #     nn.Linear(hidden_size, hidden_size),
+        #     nn.LayerNorm([hidden_size]),
+        #     nn.LeakyReLU())
 
         self.hypConv = InterativeConv(hidden_size, k_size)
 
@@ -289,14 +289,15 @@ class CINConv(nn.Module):
         h_rep, _ = self.max_pooling(self.h_rep_linear(hypothesis_batch), mask=hypothesis_mask)
         p_kernel = self.filterGen(p_rep)
         h_kernel = self.filterGen(h_rep)
-        premise_batch = self.p_inp_linear(premise_batch)
-        hypothesis_batch = self.h_inp_linear(hypothesis_batch)
+        # premise_batch = self.p_inp_linear(premise_batch)
+        # hypothesis_batch = self.h_inp_linear(hypothesis_batch)
 
-        p_out_inter = self.hypConv(premise_batch, kernel=h_kernel) + self.b_p_inter
-        h_out_inter = self.hypConv(hypothesis_batch, kernel=p_kernel) +self.b_h_inter
+        p_out_inter = F.tanh(self.hypConv(premise_batch, kernel=h_kernel) + self.b_p_inter)
+        h_out_inter = F.tanh(self.hypConv(hypothesis_batch, kernel=p_kernel) +self.b_h_inter)
 
-        p_out_intra = self.hypConv(premise_batch, kernel=p_kernel) + self.b_p_intra
-        h_out_intra = self.hypConv(hypothesis_batch, kernel=h_kernel) + self.b_h_intra
+        p_out_intra = F.tanh(self.hypConv(premise_batch, kernel=p_kernel) + self.b_p_intra)
+        h_out_intra = F.tanh(self.hypConv(hypothesis_batch, kernel=h_kernel) + self.b_h_intra)
+
 
         p_out = torch.cat((premise_batch, p_out_inter, p_out_intra, p_out_intra - p_out_inter,
                            torch.abs(p_out_intra - p_out_inter),
