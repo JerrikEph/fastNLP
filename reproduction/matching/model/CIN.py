@@ -246,8 +246,8 @@ class CINConv(nn.Module):
         nn.init.xavier_uniform_(self.h_map[1].weight.data)
         nn.init.xavier_uniform_(self.p_rep_linear[1].weight)
         nn.init.xavier_uniform_(self.h_rep_linear[1].weight)
-        nn.init.xavier_uniform_(self.p_inp_linear[1].weight)
-        nn.init.xavier_uniform_(self.h_inp_linear[1].weight)
+        # nn.init.xavier_uniform_(self.p_inp_linear[1].weight)
+        # nn.init.xavier_uniform_(self.h_inp_linear[1].weight)
 
     @staticmethod
     def mean_pooling(input, mask, dim=1):
