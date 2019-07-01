@@ -81,7 +81,7 @@ class CINModel(nn.Module):
         out = torch.cat((a_max, b_max, a_avg, b_avg), dim=1)  # v: [B, 10 * H]
         logits = self.classifier(out)
         # logits = torch.clamp(logits, min=-1.0, max=1.0)
-        logits = F.tanh(logits)
+        # logits = F.tanh(logits)
 
         if target is not None:
             loss_fct = CrossEntropyLoss()
@@ -224,12 +224,14 @@ class CINConv(nn.Module):
         self.p_inp_linear = nn.Sequential(
             nn.Dropout(p=self.dropout),
             nn.Linear(hidden_size, hidden_size),
-            nn.LayerNorm([hidden_size]))
+            nn.LayerNorm([hidden_size]),
+            nn.LeakyReLU())
 
         self.h_inp_linear = nn.Sequential(
             nn.Dropout(p=self.dropout),
             nn.Linear(hidden_size, hidden_size),
-            nn.LayerNorm([hidden_size]))
+            nn.LayerNorm([hidden_size]),
+            nn.LeakyReLU())
 
         self.hypConv = InterativeConv(hidden_size, k_size)
 
