@@ -115,7 +115,7 @@ else:
     raise RuntimeError(f'NOT support {arg.model} model yet!')
 
 
-optimizer = AdamW(lr=arg.lr, params=model.parameters(), weight_decay=arg.wd)
+optimizer = Adamax(lr=arg.lr, params=model.parameters())
 scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
 
 callbacks = [
