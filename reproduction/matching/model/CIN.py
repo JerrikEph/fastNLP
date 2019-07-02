@@ -17,7 +17,7 @@ from fastNLP.core.callback import Callback
 #args = type('args', (), {})()
 
 
-class CINModel(BaseModel):
+class CINModel(nn.Module):
     def __init__(self, init_embedding: TokenEmbedding, hidden_size=None, num_labels=3, k_sz=3, dropout_rate=0.3,
                  dropout_embed=0.3):
         super(CINModel, self).__init__()
@@ -80,6 +80,8 @@ class CINModel(BaseModel):
 
         out = torch.cat((a_max, b_max, a_avg, b_avg), dim=1)  # v: [B, 10 * H]
         logits = self.classifier(out)
+        # logits = torch.clamp(logits, min=-1.0, max=1.0)
+        # logits = F.tanh(logits)
 
         if target is not None:
             loss_fct = CrossEntropyLoss()
@@ -89,8 +91,8 @@ class CINModel(BaseModel):
         else:
             return {Const.OUTPUT: logits}
 
-    def predict(self, **kwargs):
-        return self.forward(**kwargs)
+    # def predict(self, **kwargs):
+    #     return self.forward(**kwargs)
 
     # input [batch_size, len , hidden]
     # mask  [batch_size, len] (111...00)
@@ -181,6 +183,22 @@ class CINConv(nn.Module):
     def __init__(self, hidden_size, k_size, dropout):
         super(CINConv, self).__init__()
         self.dropout = dropout
+        self.h_sz = hidden_size
+        self.k_sz = k_size
+
+        in_features = hidden_size
+        out_features = hidden_size * self.k_sz
+        self.scale_factor = Parameter(torch.tensor(1.0))
+        self.layer_norm = nn.LayerNorm([self.k_sz * self.h_sz, self.h_sz])
+        # shape(h_sz*k, h_sz) -> (b_sz, k*h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
+        self.P = Parameter(torch.Tensor(out_features, in_features))
+        # shape(k*h_sz, h_sz) -> (1, k, h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
+        self.Q = Parameter(torch.Tensor(out_features, in_features))
+        self.B = Parameter(torch.Tensor(self.k_sz, hidden_size, hidden_size))
+        self.b_p_inter = Parameter(torch.zeros(hidden_size))
+        self.b_h_inter = Parameter(torch.zeros(hidden_size))
+        self.b_p_intra = Parameter(torch.zeros(hidden_size))
+        self.b_h_intra = Parameter(torch.zeros(hidden_size))
 
         self.p_map = nn.Sequential(
             nn.Dropout(p=self.dropout),
@@ -203,28 +221,33 @@ class CINConv(nn.Module):
             nn.Linear(hidden_size, hidden_size),
             nn.LayerNorm([hidden_size]),
             nn.Tanh())
-        self.p_inp_linear = nn.Sequential(
-            nn.Dropout(p=self.dropout),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LayerNorm([hidden_size]),
-            nn.Tanh())
+        # self.p_inp_linear = nn.Sequential(
+        #     nn.Dropout(p=self.dropout),
+        #     nn.Linear(hidden_size, hidden_size),
+        #     nn.LayerNorm([hidden_size]),
+        #     nn.LeakyReLU())
+        #
+        # self.h_inp_linear = nn.Sequential(
+        #     nn.Dropout(p=self.dropout),
+        #     nn.Linear(hidden_size, hidden_size),
+        #     nn.LayerNorm([hidden_size]),
+        #     nn.LeakyReLU())
 
-        self.h_inp_linear = nn.Sequential(
-            nn.Dropout(p=self.dropout),
-            nn.Linear(hidden_size, hidden_size),
-            nn.LayerNorm([hidden_size]),
-            nn.Tanh())
+        self.hypConv = InterativeConv(hidden_size, k_size)
 
-        self.pConv = InterativeConv(hidden_size, k_size)
-        self.hConv = InterativeConv(hidden_size, k_size)
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        nn.init.xavier_uniform_(self.P)
+        nn.init.xavier_uniform_(self.Q)
+        nn.init.zeros_(self.B)
 
         nn.init.xavier_uniform_(self.p_map[1].weight.data)
         nn.init.xavier_uniform_(self.h_map[1].weight.data)
         nn.init.xavier_uniform_(self.p_rep_linear[1].weight)
         nn.init.xavier_uniform_(self.h_rep_linear[1].weight)
-        nn.init.xavier_uniform_(self.p_inp_linear[1].weight)
-        nn.init.xavier_uniform_(self.h_inp_linear[1].weight)
-
+        # nn.init.xavier_uniform_(self.p_inp_linear[1].weight)
+        # nn.init.xavier_uniform_(self.h_inp_linear[1].weight)
 
     @staticmethod
     def mean_pooling(input, mask, dim=1):
@@ -237,80 +260,6 @@ class CINConv(nn.Module):
         masks = mask.view(mask.size(0), mask.size(1), -1)
         masks = masks.expand(-1, -1, input.size(2)).float()
         return torch.max(input + masks.le(0.5).float() * -my_inf, dim=dim)
-
-    def forward(self, premise_batch, premise_mask, hypothesis_batch, hypothesis_mask):
-        p_rep, _ = self.max_pooling(premise_batch, mask=premise_mask)
-        h_rep, _ = self.max_pooling(hypothesis_batch, mask=hypothesis_mask)
-        p_rep = self.p_rep_linear(p_rep)
-        h_rep = self.h_rep_linear(h_rep)
-        premise_batch = self.p_inp_linear(premise_batch)
-        premise_batch = self.h_inp_linear(premise_batch)
-
-        p_out_inter = self.pConv(premise_batch, filter_rep=h_rep)
-        h_out_inter = self.hConv(hypothesis_batch, filter_rep=p_rep)
-
-        p_out_intra = self.pConv(premise_batch, filter_rep=p_rep)
-        h_out_intra = self.hConv(hypothesis_batch, filter_rep=h_rep)
-
-        p_out = torch.cat((premise_batch, p_out_inter, p_out_intra, p_out_intra - p_out_inter,
-                           torch.abs(p_out_intra - p_out_inter),
-                           p_out_intra * p_out_inter), dim=2)  # ma: [B, PL, 8 * H]
-
-        h_out = torch.cat((hypothesis_batch, h_out_inter, h_out_intra, h_out_intra - h_out_inter,
-                           torch.abs(h_out_intra - h_out_inter),
-                           h_out_intra * h_out_inter), dim=2)  # ma: [B, PL, 8 * H]
-
-        p_out, h_out = self.p_map(p_out), self.p_map(h_out)
-
-
-        return p_out, h_out
-
-
-class InterativeConv(nn.Module):
-
-    def __init__(self, hidden_size, k_sz):
-        super(InterativeConv, self).__init__()
-        self.h_sz = hidden_size
-        self.k_sz = k_sz
-        in_features = hidden_size
-        out_features = hidden_size*k_sz
-
-        self.scale_factor = Parameter(torch.tensor(1.0))
-
-        self.layer_norm = nn.LayerNorm([self.k_sz*self.h_sz, self.h_sz])
-
-        self.P = Parameter(torch.Tensor(out_features, in_features))   # shape(h_sz*k, h_sz) -> (b_sz, k*h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
-
-        self.Q = Parameter(torch.Tensor(out_features, in_features))   # shape(k*h_sz, h_sz) -> (1, k, h_sz, h_sz) -> (b_sz, k, h_sz, h_sz)
-
-        self.B = Parameter(torch.Tensor(k_sz, hidden_size, hidden_size))
-
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        nn.init.xavier_uniform_(self.P)
-        nn.init.xavier_uniform_(self.Q)
-        nn.init.zeros_(self.B)
-
-    def forward(self, inputs, filter_rep):
-        '''
-
-        :param inputs:
-        :param filter_rep:
-        :param k_sz:
-        :return:
-        '''
-
-
-        kernel = self.filterGen(filter_rep=filter_rep)  # shape(b_sz, k*h_sz, h_sz)
-        fan_in, fan_out = self.k_sz*self.h_sz, self.h_sz
-        # kernel = self.layer_norm(kernel)
-        kernel = kernel/math.sqrt(fan_in)*self.scale_factor
-
-        out = self.hyperConv(inputs, kernel, k_sz=self.k_sz)
-        out = F.layer_norm(out, [self.h_sz])
-        out = F.tanh(out)
-        return out
 
     def filterGen(self, filter_rep):
         '''
@@ -329,7 +278,58 @@ class InterativeConv(nn.Module):
         Pz = Pz.view(size=[b_sz, self.k_sz, self.h_sz, self.h_sz])
         PzQ = Pz.matmul(Q) + B
         kernel = PzQ.view(size=[b_sz, self.k_sz*self.h_sz, self.h_sz])   # shape(b_sz, k*h_sz, h_sz)
+
+        fan_in, fan_out = self.k_sz * self.h_sz, self.h_sz
+        # kernel = self.layer_norm(kernel)
+        kernel = kernel / math.sqrt(fan_in) * self.scale_factor
         return kernel
+
+    def forward(self, premise_batch, premise_mask, hypothesis_batch, hypothesis_mask):
+        p_rep, _ = self.max_pooling(self.p_rep_linear(premise_batch), mask=premise_mask)
+        h_rep, _ = self.max_pooling(self.h_rep_linear(hypothesis_batch), mask=hypothesis_mask)
+        p_kernel = self.filterGen(p_rep)
+        h_kernel = self.filterGen(h_rep)
+        # premise_batch = self.p_inp_linear(premise_batch)
+        # hypothesis_batch = self.h_inp_linear(hypothesis_batch)
+
+        p_out_inter = F.tanh(self.hypConv(premise_batch, kernel=h_kernel) + self.b_p_inter)
+        h_out_inter = F.tanh(self.hypConv(hypothesis_batch, kernel=p_kernel) +self.b_h_inter)
+
+        p_out_intra = F.tanh(self.hypConv(premise_batch, kernel=p_kernel) + self.b_p_intra)
+        h_out_intra = F.tanh(self.hypConv(hypothesis_batch, kernel=h_kernel) + self.b_h_intra)
+
+
+        p_out = torch.cat((premise_batch, p_out_inter, p_out_intra, p_out_intra - p_out_inter,
+                           torch.abs(p_out_intra - p_out_inter),
+                           p_out_intra * p_out_inter), dim=2)  # ma: [B, PL, 8 * H]
+
+        h_out = torch.cat((hypothesis_batch, h_out_inter, h_out_intra, h_out_intra - h_out_inter,
+                           torch.abs(h_out_intra - h_out_inter),
+                           h_out_intra * h_out_inter), dim=2)  # ma: [B, PL, 8 * H]
+        p_out, h_out = self.p_map(p_out), self.h_map(h_out)
+
+        return p_out, h_out
+
+
+class InterativeConv(nn.Module):
+
+    def __init__(self, hidden_size, k_sz):
+        super(InterativeConv, self).__init__()
+        self.h_sz = hidden_size
+        self.k_sz = k_sz
+
+    def forward(self, inputs, kernel):
+        '''
+
+        :param inputs:
+        :param filter_rep:
+        :param k_sz:
+        :return:
+        '''
+
+        out = self.hyperConv(inputs, kernel, k_sz=self.k_sz)
+        out = F.layer_norm(out, [self.h_sz])
+        return out
 
     @staticmethod
     def hyperConv(inputs, kernel, k_sz):
@@ -383,6 +383,8 @@ class ParamResetCallback(Callback):
     def on_epoch_end(self):
         print('\n')
 
-    def on_epoch_begin(self):
-        if self.epoch < 10:
-            self.model.module.reset_classifier_params()
+
+    # def on_step_end(self):
+    #     if self.step % 10 ==1 and self.step < 10000:
+    #         self.model.module.reset_classifier_params()
+            # print('Classifier weight reset')

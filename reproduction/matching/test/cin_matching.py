@@ -21,7 +21,8 @@ from reproduction.matching.model.esim import ESIMModel
 from reproduction.matching.model.CIN import CINModel, ParamResetCallback
 
 import fitlog
-fitlog.debug()
+
+fitlog.set_log_dir("Logs")
 
 import argparse
 
@@ -119,7 +120,7 @@ optimizer = Adamax(lr=arg.lr, params=model.parameters())
 scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
 
 callbacks = [
-    GradientClipCallback(clip_value=10), LRScheduler(scheduler), ParamResetCallback()
+    GradientClipCallback(clip_value=0.5), LRScheduler(scheduler), ParamResetCallback()
 ]
 if arg.task in ['snli']:
     callbacks.append(FitlogCallback(data_info.datasets[arg.testset_name], verbose=1))
@@ -129,7 +130,9 @@ trainer = Trainer(train_data=data_info.datasets['train'], model=model,
                   batch_size=torch.cuda.device_count() * arg.batch_size_per_gpu,
                   n_epochs=arg.n_epochs, print_every=-1,
                   dev_data=data_info.datasets['dev'],
-                  metrics=AccuracyMetric(), metric_key='acc', device=[i for i in range(torch.cuda.device_count())],
+                  metrics=AccuracyMetric(), metric_key='acc',
+                  device=[i for i in range(torch.cuda.device_count())],
+                  # validate_every=30,
                   check_code_level=-1, callbacks=callbacks)
 trainer.train(load_best_model=True)
 

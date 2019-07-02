@@ -1,5 +1,9 @@
 .gitignore
 
+reproduction/matching/data/snli/
+reproduction/matching/data/snli_1.0.zip
+reproduction/matching/snli_upper_tr.pkl
+
 .DS_Store
 .ipynb_checkpoints
 *.pyc
