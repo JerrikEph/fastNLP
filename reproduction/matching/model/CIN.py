@@ -384,7 +384,7 @@ class ParamResetCallback(Callback):
         print('\n')
 
 
-    # def on_step_end(self):
-    #     if self.step % 10 ==1 and self.step < 10000:
-    #         self.model.module.reset_classifier_params()
-            # print('Classifier weight reset')
+    def on_step_end(self):
+        if self.step == 15:
+            self.trainer.optimizer = torch.optim.SGD(lr=0.1, params=self.trainer.model.module.parameters())
+            print('Change optimizer')
