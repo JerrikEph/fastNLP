@@ -379,12 +379,14 @@ class ParamResetCallback(Callback):
 
     def __init__(self):
         super(ParamResetCallback, self).__init__()
+        self.tag = True
 
     def on_epoch_end(self):
         print('\n')
 
 
     def on_step_end(self):
-        if self.epoch == 15:
-            self.trainer.optimizer = torch.optim.SGD(lr=0.1, params=self.trainer.model.module.parameters())
+        if self.epoch == 15 and self.tag:
+            self.trainer.optimizer = torch.optim.SGD(lr=0.5, params=self.trainer.model.module.parameters())
+            self.tag=False
             print('Change optimizer')
