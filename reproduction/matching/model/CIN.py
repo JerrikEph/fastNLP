@@ -385,6 +385,6 @@ class ParamResetCallback(Callback):
 
 
     def on_step_end(self):
-        if self.step == 15:
+        if self.epoch == 15:
             self.trainer.optimizer = torch.optim.SGD(lr=0.1, params=self.trainer.model.module.parameters())
             print('Change optimizer')
