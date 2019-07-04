@@ -13,7 +13,7 @@ from torch import nn
 from fastNLP import cache_results
 from fastNLP.core import Trainer, Tester, AccuracyMetric, Const
 from fastNLP.core.callback import GradientClipCallback, LRScheduler, FitlogCallback
-from fastNLP.modules.encoder.embedding import ElmoEmbedding, StaticEmbedding
+import fastNLP.modules.encoder.embedding as Embed
 
 from reproduction.matching.data.MatchingDataLoader import SNLILoader, RTELoader, QNLILoader
 from reproduction.matching.model.bert import BertForNLI
@@ -57,7 +57,7 @@ for k in arg.__dict__:
 bert_dirs = '/remote-home/hyan01/fastnlp_caches/bert-base-uncased'
 
 os.environ['FASTNLP_BASE_URL'] = 'http://10.141.222.118:8888/file/download/'
-os.environ['FASTNLP_CACHE_DIR'] = '/remote-home/hyan01/fastnlp_caches'
+os.environ['FASTNLP_CACHE_DIR'] = '/mnt/cephfs_hl/mlnlp/gongjingjing/.fastnlp_cache'
 
 # load data set
 if arg.task == 'snli':
@@ -95,9 +95,13 @@ print(data_info)
 
 
 if arg.embedding == 'elmo':
-    embedding = ElmoEmbedding(data_info.vocabs[Const.INPUT], requires_grad=True)
+    embedding = Embed.ElmoEmbedding(data_info.vocabs[Const.INPUT], requires_grad=True)
 elif arg.embedding == 'glove':
-    embedding = StaticEmbedding(data_info.vocabs[Const.INPUT], requires_grad=True, normalize=False)
+    embedding = Embed.StackEmbedding(
+        [Embed.StaticEmbedding(data_info.vocabs[Const.INPUT], requires_grad=True, normalize=False),
+         Embed.CNNCharEmbedding(data_info.vocabs[Const.INPUT], dropout=0.0)])
+
+
     # embedding.embedding.weight.data = embedding.embedding.weight.data / embedding.embedding.weight.data.std()
 
 elif arg.embedding == 'none':
